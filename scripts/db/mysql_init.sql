@@ -1,0 +1,4 @@
+CREATE DATABASE productos;
+CREATE USER 'equipo'@'%' IDENTIFIED BY '123456';
+GRANT ALL PRIVILEGES ON productos.* TO 'equipo'@'%';
+FLUSH PRIVILEGES;

@@ -1,0 +1,18 @@
+services:
+  db:
+    image: mysql:8.0 
+    container_name: mysql-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"  # Map host port 3306 to container port 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: productos
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+    volumes:
+      - db_data:/var/lib/mysql # Persist database data
+      - ./mysql_init.sql:/docker-entrypoint-initdb.d/mysql_init.sql # Optional:  Initialize database schema
+
+volumes:
+  db_data:
