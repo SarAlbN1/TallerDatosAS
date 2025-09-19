@@ -2,7 +2,6 @@ package cliente.application.controllers;
 
 import cliente.application.models.Product;
 import cliente.application.services.ProductService;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,13 +18,14 @@ public class ProductController {
   }
 
   @GetMapping
-  public List<Product> all() {
+  public List<Product> getAll() {
+    // devuelve products con organization y category ya inicializados
     return service.findAll();
   }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public Product create(@Valid @RequestBody Product p) {
-    return service.create(p);
+  public Product create(@RequestBody Product product) {
+    return service.create(product);
   }
 }

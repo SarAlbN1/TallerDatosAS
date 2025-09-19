@@ -16,7 +16,9 @@ public class ProductService {
     this.repo = repo;
   }
 
+  @Transactional(readOnly = true)
   public List<Product> findAll() {
+    // gracias al @EntityGraph en el repo, organization y category vienen cargados
     return repo.findAll();
   }
 
