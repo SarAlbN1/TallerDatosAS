@@ -15,20 +15,30 @@ document.addEventListener('DOMContentLoaded', () => {
 // Cargar productos via SOAP
 async function loadProductsSOAP() {
     try {
+        console.log('Iniciando carga de productos via SOAP...');
         Utils.showLoading('loading');
         Utils.hideError('error');
         
         const soapResponse = await SoapService.getProducts();
         lastSoapResponse = soapResponse;
         
+        console.log('Respuesta SOAP recibida:', soapResponse);
+        
         // Mostrar respuesta SOAP raw
         displaySoapResponse(soapResponse);
         
         // Parsear productos de la respuesta SOAP
         allProducts = parseSoapProducts(soapResponse);
+        console.log('Productos parseados:', allProducts);
+        console.log('Número de productos encontrados:', allProducts.length);
+        
         renderProducts(allProducts);
         
-        Notification.show('Productos cargados via SOAP exitosamente', 'success');
+        if (allProducts.length > 0) {
+            Notification.show(`${allProducts.length} productos cargados via SOAP exitosamente`, 'success');
+        } else {
+            Notification.show('No se encontraron productos en la respuesta SOAP', 'warning');
+        }
         
     } catch (error) {
         console.error('Error loading products via SOAP:', error);
@@ -44,25 +54,48 @@ function parseSoapProducts(soapResponse) {
     const products = [];
     
     try {
-        // Buscar productos en la respuesta SOAP
-        const productElements = soapResponse.querySelectorAll('product, Product');
+        // Buscar productos en la respuesta SOAP con diferentes namespaces
+        const productElements = soapResponse.querySelectorAll('product, Product, ns3\\:product, [local-name()="product"]');
         
         productElements.forEach(productElement => {
             const product = {
-                id: getSoapElementValue(productElement, 'id, Id'),
-                name: getSoapElementValue(productElement, 'name, Name'),
+                id: getSoapElementValue(productElement, 'id, Id, ns3\\:id'),
+                name: getSoapElementValue(productElement, 'name, Name, ns3\\:name'),
                 organization: {
-                    id: getSoapElementValue(productElement, 'organization id, organization Id, Organization Id'),
-                    name: getSoapElementValue(productElement, 'organization name, organization Name, Organization Name')
+                    id: getSoapElementValue(productElement, 'organization id, organization Id, Organization Id, ns3\\:organization id'),
+                    name: getSoapElementValue(productElement, 'organization name, organization Name, Organization Name, ns3\\:organization name')
                 },
                 category: {
-                    id: getSoapElementValue(productElement, 'category id, category Id, Category Id'),
-                    name: getSoapElementValue(productElement, 'category name, category Name, Category Name'),
-                    description: getSoapElementValue(productElement, 'category description, category Description, Category Description')
+                    id: getSoapElementValue(productElement, 'category id, category Id, Category Id, ns3\\:category id'),
+                    name: getSoapElementValue(productElement, 'category name, category Name, Category Name, ns3\\:category name'),
+                    description: getSoapElementValue(productElement, 'category description, category Description, Category Description, ns3\\:category description')
                 }
             };
             
-            if (product.name) {
+            // También intentar obtener datos con selectores directos
+            if (!product.id) {
+                product.id = productElement.querySelector('id, [local-name()="id"]')?.textContent?.trim();
+            }
+            if (!product.name) {
+                product.name = productElement.querySelector('name, [local-name()="name"]')?.textContent?.trim();
+            }
+            
+            // Organización
+            const orgElement = productElement.querySelector('organization, [local-name()="organization"]');
+            if (orgElement && !product.organization.id) {
+                product.organization.id = orgElement.querySelector('id, [local-name()="id"]')?.textContent?.trim();
+                product.organization.name = orgElement.querySelector('name, [local-name()="name"]')?.textContent?.trim();
+            }
+            
+            // Categoría
+            const catElement = productElement.querySelector('category, [local-name()="category"]');
+            if (catElement && !product.category.id) {
+                product.category.id = catElement.querySelector('id, [local-name()="id"]')?.textContent?.trim();
+                product.category.name = catElement.querySelector('name, [local-name()="name"]')?.textContent?.trim();
+                product.category.description = catElement.querySelector('description, [local-name()="description"]')?.textContent?.trim();
+            }
+            
+            if (product.name && product.id) {
                 products.push(product);
             }
         });
@@ -79,9 +112,14 @@ function getSoapElementValue(parentElement, selectors) {
     const selectorList = selectors.split(', ');
     
     for (const selector of selectorList) {
-        const element = parentElement.querySelector(selector.trim());
-        if (element && element.textContent) {
-            return element.textContent.trim();
+        try {
+            const element = parentElement.querySelector(selector.trim());
+            if (element && element.textContent) {
+                return element.textContent.trim();
+            }
+        } catch (e) {
+            // Continuar si el selector falla (por namespace issues)
+            console.debug('Selector failed:', selector, e);
         }
     }
     
@@ -95,8 +133,44 @@ function displaySoapResponse(soapResponse) {
     
     if (responseDiv && contentDiv) {
         responseDiv.style.display = 'block';
-        contentDiv.textContent = new XMLSerializer().serializeToString(soapResponse);
+        
+        // Formatear el XML para mejor legibilidad
+        const xmlString = new XMLSerializer().serializeToString(soapResponse);
+        const formattedXml = formatXml(xmlString);
+        contentDiv.textContent = formattedXml;
+        
+        console.log('SOAP Response XML:', xmlString);
+        console.log('Formatted XML:', formattedXml);
     }
+}
+
+// Formatear XML para mejor visualización
+function formatXml(xml) {
+    let formatted = '';
+    const reg = /(>)(<)(\/*)/g;
+    xml = xml.replace(reg, '$1\r\n$2$3');
+    let pad = 0;
+    
+    xml.split('\r\n').forEach(function(line) {
+        let indent = 0;
+        if (line.match(/.+<\/\w[^>]*>$/)) {
+            indent = 0;
+        } else if (line.match(/^<\/\w/)) {
+            if (pad != 0) {
+                pad -= 1;
+            }
+        } else if (line.match(/^<\w[^>]*[^\/]>.*$/)) {
+            indent = 1;
+        } else {
+            indent = 0;
+        }
+        
+        const padding = new Array(pad + 1).join('  ');
+        formatted += padding + line + '\r\n';
+        pad += indent;
+    });
+    
+    return formatted;
 }
 
 // Renderizar productos en la grilla
