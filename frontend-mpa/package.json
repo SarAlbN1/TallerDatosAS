@@ -1,0 +1,29 @@
+{
+  "name": "frontend-mpa",
+  "version": "1.0.0",
+  "description": "Multi-Page Application for TallerDatosAS - Two-tier architecture demonstration",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 3001",
+    "serve": "python -m http.server 3001",
+    "dev": "python -m http.server 3001"
+  },
+  "keywords": [
+    "mpa",
+    "multi-page-application",
+    "two-tier-architecture",
+    "rest",
+    "soap",
+    "spring-boot",
+    "mysql"
+  ],
+  "author": "TallerDatosAS Team",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/TallerDatosAS"
+  },
+  "homepage": "https://github.com/your-repo/TallerDatosAS#readme"
+}

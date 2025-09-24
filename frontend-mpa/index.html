@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TallerDatosAS - MPA (Multi-Page Application)</title>
+    <link rel="stylesheet" href="src/css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-database"></i>
+                <span>TallerDatosAS</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link active">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="src/pages/products.html" class="nav-link">
+                        <i class="fas fa-box"></i> Productos (REST)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="src/pages/soap-products.html" class="nav-link">
+                        <i class="fas fa-cogs"></i> Productos (SOAP)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="src/pages/organizations.html" class="nav-link">
+                        <i class="fas fa-building"></i> Organizaciones
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="src/pages/categories.html" class="nav-link">
+                        <i class="fas fa-tags"></i> Categorías
+                    </a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1><i class="fas fa-home"></i> Sistema de Gestión de Productos</h1>
+                <p>Arquitectura de Dos Niveles - MPA (Multi-Page Application)</p>
+            </header>
+
+            <div class="dashboard">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Productos</h3>
+                            <p id="products-count">Cargando...</p>
+                            <a href="src/pages/products.html" class="card-link">Ver Productos (REST)</a>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Servicios SOAP</h3>
+                            <p>Consumo de servicios web</p>
+                            <a href="src/pages/soap-products.html" class="card-link">Ver Productos (SOAP)</a>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Organizaciones</h3>
+                            <p id="organizations-count">Cargando...</p>
+                            <a href="src/pages/organizations.html" class="card-link">Ver Organizaciones</a>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>Categorías</h3>
+                            <p id="categories-count">Cargando...</p>
+                            <a href="src/pages/categories.html" class="card-link">Ver Categorías</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-info">
+                <h2><i class="fas fa-sitemap"></i> Arquitectura de Dos Niveles</h2>
+                <div class="architecture-diagram">
+                    <div class="tier">
+                        <h3><i class="fas fa-desktop"></i> Nivel de Presentación (MPA)</h3>
+                        <p>Esta aplicación web multi-página que consume servicios del nivel de datos</p>
+                        <ul>
+                            <li>HTML, CSS, JavaScript vanilla</li>
+                            <li>Múltiples páginas (MPA)</li>
+                            <li>Consumo de servicios REST y SOAP</li>
+                        </ul>
+                    </div>
+                    <div class="arrow">↓</div>
+                    <div class="tier">
+                        <h3><i class="fas fa-database"></i> Nivel de Datos</h3>
+                        <p>Servicios que exponen la lógica de negocio y acceso a datos</p>
+                        <ul>
+                            <li>Servicios REST: <code>/api/products</code>, <code>/api/organizations</code>, <code>/api/categories</code></li>
+                            <li>Servicios SOAP: <code>/ws</code> con operaciones GetProducts y CreateProduct</li>
+                            <li>Base de datos MySQL con JPA</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <h2><i class="fas fa-star"></i> Características del Sistema</h2>
+                <div class="features-grid">
+                    <div class="feature">
+                        <i class="fas fa-docker"></i>
+                        <h4>Base de Datos con Docker</h4>
+                        <p>MySQL 8.0 desplegado con Docker Compose, con persistencia de datos</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-coffee"></i>
+                        <h4>Cliente Pesado Java</h4>
+                        <p>Spring Boot con JPA para consultas a la base de datos</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-globe"></i>
+                        <h4>Aplicación Web SPA</h4>
+                        <p>React SPA moderna para gestión de productos</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-layer-group"></i>
+                        <h4>Arquitectura de Dos Niveles</h4>
+                        <p>MPA que consume servicios REST y SOAP del nivel de datos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 TallerDatosAS - Sistema de Gestión de Productos</p>
+            <p>Arquitectura de Dos Niveles - MPA (Multi-Page Application)</p>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>

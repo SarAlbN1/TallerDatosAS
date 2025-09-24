@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           targetNamespace="http://example.com/products" 
+           xmlns="http://example.com/products" 
+           elementFormDefault="qualified">
+
+  <xs:simpleType name="id">
+    <xs:restriction base="xs:long"/>
+  </xs:simpleType>
+
+  <xs:complexType name="Organization">
+    <xs:sequence>
+      <xs:element name="id" type="id" minOccurs="0"/>
+      <xs:element name="name" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Category">
+    <xs:sequence>
+      <xs:element name="id" type="id" minOccurs="0"/>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="description" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Product">
+    <xs:sequence>
+      <xs:element name="id" type="id" minOccurs="0"/>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="organization" type="Organization"/>
+      <xs:element name="category" type="Category"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Request/Response for listing all products -->
+  <xs:element name="GetProductsRequest" type="xs:anyType"/>
+  <xs:element name="GetProductsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="products" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="product" type="Product" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Request/Response for creating a product -->
+  <xs:element name="CreateProductRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="product" type="Product"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="CreateProductResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="product" type="Product"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
+
+
