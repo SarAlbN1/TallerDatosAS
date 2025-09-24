@@ -58,19 +58,50 @@ npm run dev
 ```
 
 ### 5. Ejecutar el Frontend MPA (Arquitectura de Dos Niveles)
+
+#### Opción A: Con Servidor Python (Recomendado)
 ```bash
 cd frontend-mpa
 python server.py
-# O abrir directamente: open frontend-mpa/index.html
 ```
+
+#### Opción B: Con Servidor Python en Puerto Personalizado
+```bash
+cd frontend-mpa
+python server.py 8081  # Especificar puerto personalizado
+```
+
+#### Opción C: Abrir Directamente (Solo para pruebas básicas)
+```bash
+# Abrir directamente el archivo HTML
+open frontend-mpa/index.html  # macOS
+start frontend-mpa/index.html # Windows
+xdg-open frontend-mpa/index.html # Linux
+```
+
+**Nota importante**: Para que funcione correctamente con los endpoints REST y SOAP, se recomienda usar el servidor Python que incluye configuración CORS.
 
 ## 🌐 Acceso a la Aplicación
 
+### URLs Principales:
 - **Frontend SPA (React)**: http://localhost:3000 (o puerto disponible)
 - **Frontend MPA (Arquitectura 2 niveles)**: http://localhost:3001
 - **Backend API REST**: http://localhost:8080/api
 - **Backend SOAP**: http://localhost:8080/ws
 - **Base de datos MySQL**: localhost:3306
+
+### URLs Específicas del Frontend MPA:
+- **Dashboard Principal**: http://localhost:3001/
+- **Productos REST**: http://localhost:3001/src/pages/products.html
+- **Productos SOAP**: http://localhost:3001/src/pages/soap-products.html
+- **Organizaciones**: http://localhost:3001/src/pages/organizations.html
+- **Categorías**: http://localhost:3001/src/pages/categories.html
+
+### APIs Disponibles:
+- **REST Products**: http://localhost:8080/api/products
+- **REST Organizations**: http://localhost:8080/api/organizations
+- **REST Categories**: http://localhost:8080/api/categories
+- **SOAP WSDL**: http://localhost:8080/ws/products.wsdl
 
 ## ✅ Verificación del Despliegue
 
