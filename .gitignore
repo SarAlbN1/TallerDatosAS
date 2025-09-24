@@ -11,6 +11,7 @@ target/
 *.classpath
 *.project
 *.settings/
+.history/
 
 # OS files
 .DS_Store
@@ -30,3 +31,4 @@ out/
 # Node/React (si vas a usar la SPA en presentation/spa)
 node_modules/
 dist/
+

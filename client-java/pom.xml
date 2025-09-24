@@ -54,6 +54,12 @@
       <artifactId>jakarta.xml.bind-api</artifactId>
     </dependency>
 
+    <!-- WSDL4J for SOAP WSDL support -->
+    <dependency>
+      <groupId>wsdl4j</groupId>
+      <artifactId>wsdl4j</artifactId>
+    </dependency>
+
     <!-- JPA -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
