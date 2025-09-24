@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos SOAP - TallerDatosAS MPA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-database"></i>
+                <span>TallerDatosAS</span>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="../../index.html" class="nav-link">
+                        <i class="fas fa-home"></i> Inicio
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="products.html" class="nav-link">
+                        <i class="fas fa-box"></i> Productos (REST)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="soap-products.html" class="nav-link active">
+                        <i class="fas fa-cogs"></i> Productos (SOAP)
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="organizations.html" class="nav-link">
+                        <i class="fas fa-building"></i> Organizaciones
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="categories.html" class="nav-link">
+                        <i class="fas fa-tags"></i> Categorías
+                    </a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1><i class="fas fa-cogs"></i> Productos - Servicios SOAP</h1>
+                <p>Consumo de servicios SOAP del nivel de datos</p>
+            </header>
+
+            <div class="soap-info">
+                <div class="info-card">
+                    <h3><i class="fas fa-info-circle"></i> Información del Servicio SOAP</h3>
+                    <p><strong>Endpoint:</strong> <code>http://localhost:8080/ws</code></p>
+                    <p><strong>WSDL:</strong> <code>http://localhost:8080/ws/products.wsdl</code></p>
+                    <p><strong>Operaciones disponibles:</strong></p>
+                    <ul>
+                        <li><code>GetProducts</code> - Obtener lista de productos</li>
+                        <li><code>CreateProduct</code> - Crear nuevo producto</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadProductsSOAP()">
+                    <i class="fas fa-download"></i> Cargar Productos (SOAP)
+                </button>
+                <button class="btn btn-success" onclick="showCreateProductSOAPModal()">
+                    <i class="fas fa-plus"></i> Crear Producto (SOAP)
+                </button>
+            </div>
+
+            <div class="loading" id="loading" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando productos via SOAP...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div class="soap-response" id="soapResponse" style="display: none;">
+                <h3><i class="fas fa-code"></i> Respuesta SOAP</h3>
+                <pre id="soapResponseContent"></pre>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para crear producto via SOAP -->
+    <div class="modal" id="createProductSOAPModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Crear Producto via SOAP</h3>
+                <button class="close-btn" onclick="closeCreateProductSOAPModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createProductSOAPForm">
+                    <div class="form-group">
+                        <label for="soapProductName">Nombre del Producto:</label>
+                        <input type="text" id="soapProductName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="soapProductOrganization">Organización:</label>
+                        <select id="soapProductOrganization" name="organizationId" required>
+                            <option value="">Seleccionar organización...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="soapProductCategory">Categoría:</label>
+                        <select id="soapProductCategory" name="categoryId" required>
+                            <option value="">Seleccionar categoría...</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeCreateProductSOAPModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear via SOAP</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 TallerDatosAS - Sistema de Gestión de Productos</p>
+            <p>Arquitectura de Dos Niveles - MPA (Multi-Page Application)</p>
+        </div>
+    </footer>
+
+    <script src="../../config.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/soap-products.js"></script>
+</body>
+</html>

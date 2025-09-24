@@ -14,6 +14,7 @@ TallerDatosAS/
 ├── infra/                    # Docker + MySQL + Datos de prueba
 ├── client-java/             # Backend Spring Boot + JPA + REST/SOAP
 ├── frontend-react/          # Frontend React SPA moderno
+├── frontend-mpa/            # Frontend MPA para arquitectura de dos niveles
 └── README.md
 ```
 
@@ -49,16 +50,24 @@ export PATH=$JAVA_HOME/bin:$PATH
 mvn spring-boot:run
 ```
 
-### 4. Ejecutar el Frontend
+### 4. Ejecutar el Frontend SPA (React)
 ```bash
 cd frontend-react
 npm install
 npm run dev
 ```
 
+### 5. Ejecutar el Frontend MPA (Arquitectura de Dos Niveles)
+```bash
+cd frontend-mpa
+python server.py
+# O abrir directamente: open frontend-mpa/index.html
+```
+
 ## 🌐 Acceso a la Aplicación
 
-- **Frontend SPA**: http://localhost:3000 (o puerto disponible)
+- **Frontend SPA (React)**: http://localhost:3000 (o puerto disponible)
+- **Frontend MPA (Arquitectura 2 niveles)**: http://localhost:3001
 - **Backend API REST**: http://localhost:8080/api
 - **Backend SOAP**: http://localhost:8080/ws
 - **Base de datos MySQL**: localhost:3306
@@ -155,38 +164,61 @@ cd frontend-react && npm run dev
   - `GetProducts` - Obtener lista de productos
   - `CreateProduct` - Crear nuevo producto
 - **XSD Schema** para validación de mensajes SOAP
+- **Aplicación MPA** que consume servicios REST y SOAP
+- **Nivel de Presentación**: Frontend MPA con múltiples páginas
+- **Nivel de Datos**: Servicios REST y SOAP del backend
 
 ## 🎯 Cómo Usar la Aplicación
 
-### 1. **Explorar Productos**
-- Ve a http://localhost:3000
-- Navega por la lista de productos con scroll infinito
-- Usa la **búsqueda** para encontrar productos específicos
-- Aplica **filtros** por organización o categoría
+### **Aplicación SPA (React)**
+1. **Explorar Productos**
+   - Ve a http://localhost:3000
+   - Navega por la lista de productos con scroll infinito
+   - Usa la **búsqueda** para encontrar productos específicos
+   - Aplica **filtros** por organización o categoría
 
-### 2. **Crear Nuevos Elementos**
-- Haz clic en el botón **"+"** en el header
-- Selecciona qué crear: Producto, Organización o Categoría
-- Completa el formulario y guarda
+2. **Crear Nuevos Elementos**
+   - Haz clic en el botón **"+"** en el header
+   - Selecciona qué crear: Producto, Organización o Categoría
+   - Completa el formulario y guarda
 
-### 3. **Ver Detalles**
-- Haz clic en cualquier producto para ver detalles completos
-- Modal con información de organización y categoría
+3. **Ver Detalles**
+   - Haz clic en cualquier producto para ver detalles completos
+   - Modal con información de organización y categoría
 
-### 4. **Usar la API REST**
+### **Aplicación MPA (Arquitectura de Dos Niveles)**
+1. **Dashboard Principal**
+   - Ve a http://localhost:3001
+   - Ve contadores de productos, organizaciones y categorías
+   - Navega entre diferentes secciones usando el menú
+
+2. **Productos via REST**
+   - Ve a la sección "Productos (REST)"
+   - Lista productos obtenidos de la API REST
+   - Crea nuevos productos usando formularios
+
+3. **Productos via SOAP**
+   - Ve a la sección "Productos (SOAP)"
+   - Lista productos obtenidos de servicios SOAP
+   - Visualiza respuestas XML SOAP
+   - Crea productos via servicios SOAP
+
+4. **Gestión de Organizaciones y Categorías**
+   - Navega a las secciones correspondientes
+   - Lista, busca y crea organizaciones y categorías
+
+### **API REST y SOAP**
 ```bash
-# Obtener productos
+# Obtener productos via REST
 curl http://localhost:8080/api/products
 
-# Crear producto
+# Crear producto via REST
 curl -X POST http://localhost:8080/api/products \
   -H "Content-Type: application/json" \
   -d '{"name": "Mi Producto", "organization": {"id": 1}, "category": {"id": 1}}'
-```
 
-### 5. **Usar Servicios SOAP**
-- WSDL disponible en: http://localhost:8080/ws/products.wsdl
-- Usa herramientas como SoapUI o Postman para probar
+# WSDL SOAP disponible en: http://localhost:8080/ws/products.wsdl
+```
 
 ## 🔧 Tecnologías Utilizadas
 
@@ -199,7 +231,7 @@ curl -X POST http://localhost:8080/api/products \
 - **Spring Web Services** - Servicios SOAP
 - **Maven** - Gestión de dependencias
 
-### Frontend
+### Frontend SPA (React)
 - **React 18** - Biblioteca de UI principal
 - **Vite 7.1.7** - Herramienta de build y dev server
 - **Axios** - Cliente HTTP para API calls
@@ -207,6 +239,15 @@ curl -X POST http://localhost:8080/api/products \
 - **Lucide React** - Iconos modernos
 - **React Hot Toast** - Notificaciones
 - **CSS3** - Estilos con efectos glassmorphism
+
+### Frontend MPA (Arquitectura de Dos Niveles)
+- **HTML5** - Estructura semántica
+- **CSS3** - Estilos modernos con efectos glassmorphism
+- **JavaScript ES6+** - Lógica de la aplicación
+- **Fetch API** - Consumo de servicios REST
+- **XMLHttpRequest** - Consumo de servicios SOAP
+- **Font Awesome** - Iconografía
+- **Responsive Design** - Adaptable a móviles
 
 ### Infraestructura
 - **Docker & Docker Compose** - Contenedores
@@ -219,7 +260,7 @@ curl -X POST http://localhost:8080/api/products \
 | 1 | ✅ | Base de datos con Docker |
 | 2 | ✅ | Cliente Java con JPA |
 | 3 | ✅ | Aplicación Web SPA |
-| 4 | ✅ | Arquitectura de dos niveles |
+| 4 | ✅ | Arquitectura de dos niveles (MPA + REST/SOAP) |
 
 ## 🔍 Estructura de la Base de Datos
 
@@ -230,8 +271,10 @@ curl -X POST http://localhost:8080/api/products \
 ## 📝 Notas Técnicas
 
 - **Backend**: Puerto 8080 (REST + SOAP)
-- **Frontend**: Puerto 3000 (o disponible)
+- **Frontend SPA**: Puerto 3000 (o disponible)
+- **Frontend MPA**: Puerto 3001 (servidor Python) o archivos HTML estáticos
 - **Base de datos**: Puerto 3306 (MySQL)
 - **Proxy**: Configurado en Vite para evitar CORS
 - **Persistencia**: Garantizada con volúmenes de Docker
 - **Datos**: 24 productos, 8 organizaciones, 8 categorías pre-cargadas
+- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend
