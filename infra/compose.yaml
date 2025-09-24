@@ -10,9 +10,12 @@ services:
       MYSQL_DATABASE: productos
       MYSQL_USER: equipo
       MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - db_data:/var/lib/mysql # Persist database data
-      - ./mysql_init.sql:/docker-entrypoint-initdb.d/mysql_init.sql # Optional:  Initialize database schema
+      - ./complete_init.sql:/docker-entrypoint-initdb.d/01-complete_init.sql # Create tables and load test data
 
 volumes:
   db_data:
