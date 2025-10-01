@@ -2,7 +2,7 @@
 
 Este proyecto implementa un sistema completo de gestión de productos con arquitectura de dos niveles, cumpliendo todos los requisitos del taller:
 
-- **Punto 1**: Base de datos con Docker (MySQL)
+- **Punto 1**: Bases de datos distribuidas con Docker (3 instancias MySQL)
 - **Punto 2**: Cliente pesado Java con JPA
 - **Punto 3**: Aplicación Web SPA (React)
 - **Punto 4**: Arquitectura de dos niveles con servicios REST/SOAP
@@ -32,15 +32,33 @@ export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.j
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
-### 2. Levantar la Base de Datos con Datos de Prueba
+docker compose up -d
+### 2. Levantar las Bases de Datos con Datos de Prueba
+Ahora existen TRES bases de datos independientes, cada una en su propio contenedor MySQL 8.4 LTS:
+
+| Base | Contenedor | Puerto Host | Script Init | Objetivo |
+|------|------------|------------|-------------|----------|
+| inventario | mysql-inventario | 3306 | `inventario_init.sql` | Gestión de stock y artículos |
+| facturacion | mysql-facturacion | 3307 | `facturacion_init.sql` | Clientes, facturas y líneas |
+| pagos | mysql-pagos | 3308 | `pagos_init.sql` | Métodos y transacciones de pago |
+
+Comando:
 ```bash
 cd infra
 docker compose up -d
 ```
 
-**Nota**: La base de datos se inicializa automáticamente con:
-- 22 productos, 5 organizaciones, 8 categorías
-- Usuario: `equipo`, Contraseña: `123456`
+Credenciales (idénticas en los tres contenedores):
+- Usuario app: `equipo`
+- Contraseña: `123456`
+- Root: definido en `compose.yaml` (`MYSQL_ROOT_PASSWORD`)
+
+Cada script se ejecuta SOLO la primera vez (volumen vacío). Para re-ejecutar, elimina los volúmenes:
+```bash
+docker compose down
+docker volume rm $(docker volume ls -q | grep -E "inventario|facturacion|pagos")
+docker compose up -d
+```
 
 ### 3. Ejecutar el Backend
 ```bash
@@ -88,7 +106,9 @@ xdg-open frontend-mpa/index.html # Linux
 - **Frontend MPA (Arquitectura 2 niveles)**: http://localhost:3001
 - **Backend API REST**: http://localhost:8080/api
 - **Backend SOAP**: http://localhost:8080/ws
-- **Base de datos MySQL**: localhost:3306
+- **BD Inventario**: localhost:3306 (db: inventario)
+- **BD Facturación**: localhost:3307 (db: facturacion)
+- **BD Pagos**: localhost:3308 (db: pagos)
 
 ### URLs Específicas del Frontend MPA:
 - **Dashboard Principal**: http://localhost:3001/
@@ -157,7 +177,7 @@ cd frontend-react && npm run dev
 ## 📋 Funcionalidades Implementadas
 
 ### ✅ Punto 1 - Base de Datos con Docker
-- **MySQL 8.0** con persistencia de datos
+- **MySQL 8.4 (x3)** con persistencia de datos (una instancia por dominio lógico)
 - **Docker Compose** configurado para despliegue automático
 - **Inicialización automática** con tablas y datos de prueba
 - **Puerto 3306** expuesto
@@ -258,7 +278,7 @@ curl -X POST http://localhost:8080/api/products \
 - **Java 21** - Lenguaje de programación
 - **Spring Data JPA** - Abstracción de datos
 - **Hibernate** - ORM para MySQL
-- **MySQL 8.0** - Base de datos relacional
+- **MySQL 8.4 (3 instancias)** - Bases de datos relacionales aisladas
 - **Spring Web Services** - Servicios SOAP
 - **Maven** - Gestión de dependencias
 
@@ -282,7 +302,7 @@ curl -X POST http://localhost:8080/api/products \
 
 ### Infraestructura
 - **Docker & Docker Compose** - Contenedores
-- **MySQL 8.0** - Base de datos
+- **MySQL 8.4 (3 instancias)** - Bases de datos
 
 ## 📊 Estado del Proyecto
 
@@ -295,17 +315,36 @@ curl -X POST http://localhost:8080/api/products \
 
 ## 🔍 Estructura de la Base de Datos
 
-- **products**: Productos con relaciones a organizaciones y categorías
-- **organizations**: Organizaciones que ofrecen productos  
-- **categories**: Categorías de productos
+Ahora la capa de datos está distribuida en tres dominios independientes para favorecer separación de responsabilidades y facilitar escalado horizontal futuro:
+
+### Base `inventario` (Puerto 3306)
+- `categorias(id, nombre, descripcion)`
+- `items(id, sku, nombre, categoria_id, stock)`
+
+### Base `facturacion` (Puerto 3307)
+- `clientes(id, nombre, email, nif)`
+- `facturas(id, numero, fecha, cliente_id, total)`
+- `factura_detalle(id, factura_id, concepto, cantidad, precio_unitario)`
+
+### Base `pagos` (Puerto 3308)
+- `metodos_pago(id, codigo, descripcion)`
+- `pagos(id, referencia, fecha, importe, moneda, metodo_id, estado)`
+
+La base original usada por el backend (productos / organizations / categories) puede migrarse gradualmente a este esquema distribuido según evolución del proyecto.
 
 ## 📝 Notas Técnicas
 
 - **Backend**: Puerto 8080 (REST + SOAP)
 - **Frontend SPA**: Puerto 3000 (o disponible)
 - **Frontend MPA**: Puerto 3001 (servidor Python) o archivos HTML estáticos
-- **Base de datos**: Puerto 3306 (MySQL)
+- **Bases de datos**:
+   - Inventario: 3306 (schema: inventario)
+   - Facturación: 3307 (schema: facturacion)
+   - Pagos: 3308 (schema: pagos)
 - **Proxy**: Configurado en Vite para evitar CORS
 - **Persistencia**: Garantizada con volúmenes de Docker
-- **Datos**: 24 productos, 8 organizaciones, 8 categorías pre-cargadas
-- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend
+- **Datos iniciales**:
+   - inventario: 3 categorías, 4 ítems
+   - facturacion: 2 clientes, 2 facturas, 3 líneas
+   - pagos: 3 métodos, 3 transacciones
+- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend; datos preparados para futura separación de microservicios

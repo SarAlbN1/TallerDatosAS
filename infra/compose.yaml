@@ -1,21 +1,59 @@
 services:
-  db:
-    image: mysql:8.0 
-    container_name: mysql-db
+  db_inventario:
+    image: mysql:8.4
+    container_name: mysql-inventario
     restart: unless-stopped
     ports:
-      - "3306:3306"  # Map host port 3306 to container port 3306
+      - "3306:3306" # Inventario DB
     environment:
       MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
-      MYSQL_DATABASE: productos
+      MYSQL_DATABASE: inventario
       MYSQL_USER: equipo
       MYSQL_PASSWORD: 123456
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
-      - db_data:/var/lib/mysql # Persist database data
-      - ./complete_init.sql:/docker-entrypoint-initdb.d/01-complete_init.sql # Create tables and load test data
+      - inventario_data:/var/lib/mysql
+      - ./inventario_init.sql:/docker-entrypoint-initdb.d/01-inventario_init.sql:ro
+
+  db_facturacion:
+    image: mysql:8.4
+    container_name: mysql-facturacion
+    restart: unless-stopped
+    ports:
+      - "3307:3306" # Facturación DB (host 3307)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: facturacion
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - facturacion_data:/var/lib/mysql
+      - ./facturacion_init.sql:/docker-entrypoint-initdb.d/01-facturacion_init.sql:ro
+
+  db_pagos:
+    image: mysql:8.4
+    container_name: mysql-pagos
+    restart: unless-stopped
+    ports:
+      - "3308:3306" # Pagos DB (host 3308)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: pagos
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - pagos_data:/var/lib/mysql
+      - ./pagos_init.sql:/docker-entrypoint-initdb.d/01-pagos_init.sql:ro
 
 volumes:
-  db_data:
+  inventario_data:
+  facturacion_data:
+  pagos_data:
