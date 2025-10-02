@@ -20,16 +20,22 @@ CREATE TABLE IF NOT EXISTS items (
 
 -- Datos iniciales
 INSERT INTO categorias (nombre, descripcion) VALUES
- ('Hardware','Componentes físicos'),
- ('Accesorios','Periféricos y complementos'),
- ('Software','Licencias y paquetes')
+ ('Electrónica','Productos electrónicos y accesorios'),
+ ('Oficina','Artículos de oficina y papelería'),
+ ('Computación','Equipos y accesorios de computación')
 ON DUPLICATE KEY UPDATE descripcion=VALUES(descripcion);
 
 INSERT INTO items (sku, nombre, categoria_id, stock) VALUES
- ('HW-001','Disco SSD 1TB',1,25),
- ('HW-002','Memoria 16GB DDR4',1,40),
- ('AC-001','Teclado mecánico',2,15),
- ('SW-001','Licencia Antivirus',3,100)
+ ('LAPTOP001','Laptop Dell Inspiron 15',3,10),
+ ('LAPTOP002','Laptop HP Pavilion',3,15),
+ ('MOUSE001','Mouse Logitech MX Master 3',3,50),
+ ('KEYBOARD001','Teclado Mecánico Corsair K95',3,30),
+ ('MONITOR001','Monitor Samsung 27" 4K',1,20),
+ ('HEADSET001','Audífonos Sony WH-1000XM4',1,25),
+ ('WEBCAM001','Webcam Logitech C920',1,40),
+ ('PRINTER001','Impresora HP LaserJet Pro',2,12),
+ ('DESK001','Escritorio Ajustable Eléctrico',2,8),
+ ('CHAIR001','Silla Ergonómica Herman Miller',2,15)
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), stock=VALUES(stock);
 
 SELECT 'Inventario categorias' label, COUNT(*) total FROM categorias UNION ALL
