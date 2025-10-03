@@ -1,7 +1,7 @@
-package cliente.application.controllers;
+package cliente.application.controllers.productos;
 
-import cliente.application.models.Category;
-import cliente.application.services.CategoryService;
+import cliente.application.models.productos.Category;
+import cliente.application.services.productos.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

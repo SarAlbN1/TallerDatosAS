@@ -1,7 +1,8 @@
-package cliente.application.services;
+package cliente.application.services.productos;
 
-import cliente.application.models.Category;
-import cliente.application.repositories.CategoryRepository;
+import cliente.application.models.productos.Category;
+import cliente.application.repositories.productos.CategoryRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

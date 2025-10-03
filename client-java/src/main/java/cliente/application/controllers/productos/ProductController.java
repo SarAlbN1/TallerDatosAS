@@ -1,7 +1,8 @@
-package cliente.application.controllers;
+package cliente.application.controllers.productos;
 
-import cliente.application.models.Product;
-import cliente.application.services.ProductService;
+import cliente.application.models.productos.Product;
+import cliente.application.services.productos.ProductService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 

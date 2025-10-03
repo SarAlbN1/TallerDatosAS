@@ -1,4 +1,4 @@
-package cliente.application.models;
+package cliente.application.models.productos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

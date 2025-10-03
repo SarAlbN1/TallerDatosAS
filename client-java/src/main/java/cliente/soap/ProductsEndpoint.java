@@ -1,9 +1,9 @@
 package cliente.soap;
 
-import cliente.application.models.Category;
-import cliente.application.models.Organization;
-import cliente.application.models.Product;
-import cliente.application.services.ProductService;
+import cliente.application.models.productos.Category;
+import cliente.application.models.productos.Organization;
+import cliente.application.models.productos.Product;
+import cliente.application.services.productos.ProductService;
 import cliente.soap.products.CreateProductRequest;
 import cliente.soap.products.CreateProductResponse;
 import cliente.soap.products.GetProductsRequest;

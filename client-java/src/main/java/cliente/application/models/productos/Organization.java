@@ -1,4 +1,4 @@
-package cliente.application.models;
+package cliente.application.models.productos;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,8 +1,9 @@
-package cliente.application.repositories;
+package cliente.application.repositories.productos;
 
-import cliente.application.models.Product;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import cliente.application.models.productos.Product;
 
 import java.util.List;
 import java.util.Optional;

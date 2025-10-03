@@ -1,7 +1,8 @@
-package cliente.application.repositories;
+package cliente.application.repositories.productos;
 
-import cliente.application.models.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import cliente.application.models.productos.Category;
 
 import java.util.Optional;
 
