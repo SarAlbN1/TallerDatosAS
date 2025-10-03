@@ -14,4 +14,9 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByCategoriaId(Long categoriaId);
     List<Item> findByStockLessThan(Integer stockMinimo);
     boolean existsBySku(String sku);
+    
+    // Métodos para gestionar la relación con productos
+    List<Item> findByProductoId(Long productoId);
+    List<Item> findByProductoIdIsNull();
+    List<Item> findByProductoIdIsNotNull();
 }
