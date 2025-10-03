@@ -53,7 +53,45 @@ services:
       - pagos_data:/var/lib/mysql
       - ./pagos_init.sql:/docker-entrypoint-initdb.d/01-pagos_init.sql:ro
 
+  db_productos:
+    image: mysql:8.4
+    container_name: mysql-productos
+    restart: unless-stopped
+    ports:
+      - "3309:3306"  # Productos DB (host 3309)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: productos
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - productos_data:/var/lib/mysql # Persist database data
+      - ./productos_init.sql:/docker-entrypoint-initdb.d/productos_init.sql:ro
+
+  db_usuarios:
+    image: mysql:8.4
+    container_name: mysql-usuarios
+    restart: unless-stopped
+    ports:
+      - "3310:3306"  # Usuarios DB (host 3310)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: usuarios
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - usuarios_data:/var/lib/mysql
+      - ./usuarios_init.sql:/docker-entrypoint-initdb.d/01-usuarios_init.sql:ro
+
 volumes:
   inventario_data:
   facturacion_data:
   pagos_data:
+  productos_data:
+  usuarios_data:
