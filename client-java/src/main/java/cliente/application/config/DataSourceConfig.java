@@ -1,9 +1,7 @@
 package cliente.application.config;
 
 import com.atomikos.jdbc.AtomikosDataSourceBean;
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -14,108 +12,99 @@ import java.util.Properties;
 @Configuration
 public class DataSourceConfig {
 
+    // ================== XA (participan en JTA/Atomikos) ==================
+
     @Bean(name = "inventarioDataSource")
     @Primary
     public DataSource inventarioDataSource() {
-        AtomikosDataSourceBean dataSource = new AtomikosDataSourceBean();
-        dataSource.setUniqueResourceName("inventarioDB");
-        dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
-        
-        Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3306/inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
-        xaProps.setProperty("user", "equipo");
-        xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
-        dataSource.setXaProperties(xaProps);
-        
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
-        dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
-        dataSource.setTestQuery("SELECT 1");
-        
-        return dataSource;
+        AtomikosDataSourceBean ds = new AtomikosDataSourceBean();
+        ds.setUniqueResourceName("inventarioDB");
+        ds.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
+
+        Properties xa = new Properties();
+        xa.setProperty("url", "jdbc:mysql://localhost:3306/inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xa.setProperty("user", "equipo");
+        xa.setProperty("password", "123456");
+        xa.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        ds.setXaProperties(xa);
+
+        ds.setMinPoolSize(3);
+        ds.setMaxPoolSize(25);
+        ds.setMaxLifetime(20_000);
+        ds.setBorrowConnectionTimeout(30);
+        ds.setTestQuery("SELECT 1");
+        return ds;
     }
 
     @Bean(name = "facturacionDataSource")
     public DataSource facturacionDataSource() {
-        AtomikosDataSourceBean dataSource = new AtomikosDataSourceBean();
-        dataSource.setUniqueResourceName("facturacionDB");
-        dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
-        
-        Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3307/facturacion?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
-        xaProps.setProperty("user", "equipo");
-        xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
-        dataSource.setXaProperties(xaProps);
-        
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
-        dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
-        dataSource.setTestQuery("SELECT 1");
-        
-        return dataSource;
+        AtomikosDataSourceBean ds = new AtomikosDataSourceBean();
+        ds.setUniqueResourceName("facturacionDB");
+        ds.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
+
+        Properties xa = new Properties();
+        xa.setProperty("url", "jdbc:mysql://localhost:3307/facturacion?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xa.setProperty("user", "equipo");
+        xa.setProperty("password", "123456");
+        xa.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        ds.setXaProperties(xa);
+
+        ds.setMinPoolSize(3);
+        ds.setMaxPoolSize(25);
+        ds.setMaxLifetime(20_000);
+        ds.setBorrowConnectionTimeout(30);
+        ds.setTestQuery("SELECT 1");
+        return ds;
     }
 
     @Bean(name = "pagosDataSource")
     public DataSource pagosDataSource() {
-        AtomikosDataSourceBean dataSource = new AtomikosDataSourceBean();
-        dataSource.setUniqueResourceName("pagosDB");
-        dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
-        
-        Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3308/pagos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
-        xaProps.setProperty("user", "equipo");
-        xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
-        dataSource.setXaProperties(xaProps);
-        
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
-        dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
-        dataSource.setTestQuery("SELECT 1");
-        
-        return dataSource;
+        AtomikosDataSourceBean ds = new AtomikosDataSourceBean();
+        ds.setUniqueResourceName("pagosDB");
+        ds.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
+
+        Properties xa = new Properties();
+        xa.setProperty("url", "jdbc:mysql://localhost:3308/pagos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xa.setProperty("user", "equipo");
+        xa.setProperty("password", "123456");
+        xa.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        ds.setXaProperties(xa);
+
+        ds.setMinPoolSize(3);
+        ds.setMaxPoolSize(25);
+        ds.setMaxLifetime(20_000);
+        ds.setBorrowConnectionTimeout(30);
+        ds.setTestQuery("SELECT 1");
+        return ds;
     }
+
+    // ================== NO-XA (fuera de JTA; uso CRUD/lectura) ==================
 
     @Bean(name = "productosDataSource")
     public DataSource productosDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://localhost:3309/productos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password");
-        dataSource.setUsername("equipo");
-        dataSource.setPassword("123456");
-        
-        dataSource.setMinimumIdle(3);
-        dataSource.setMaximumPoolSize(25);
-        dataSource.setMaxLifetime(1800000); // 30 minutes
-        dataSource.setConnectionTimeout(30000); // 30 seconds
-        dataSource.setConnectionTestQuery("SELECT 1");
-        
-        return dataSource;
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl("jdbc:mysql://localhost:3309/productos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password");
+        ds.setUsername("equipo");
+        ds.setPassword("123456");
+        ds.setMinimumIdle(3);
+        ds.setMaximumPoolSize(25);
+        ds.setMaxLifetime(1_800_000); // 30 min
+        ds.setConnectionTimeout(30_000);
+        ds.setConnectionTestQuery("SELECT 1");
+        return ds;
     }
 
     @Bean(name = "usuariosDataSource")
     public DataSource usuariosDataSource() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://localhost:3310/usuarios?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password");
-        dataSource.setUsername("equipo");
-        dataSource.setPassword("123456");
-        
-        dataSource.setMinimumIdle(3);
-        dataSource.setMaximumPoolSize(25);
-        dataSource.setMaxLifetime(1800000); // 30 minutes
-        dataSource.setConnectionTimeout(30000); // 30 seconds
-        dataSource.setConnectionTestQuery("SELECT 1");
-        
-        return dataSource;
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl("jdbc:mysql://localhost:3310/usuarios?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password");
+        ds.setUsername("equipo");
+        ds.setPassword("123456");
+        ds.setMinimumIdle(3);
+        ds.setMaximumPoolSize(25);
+        ds.setMaxLifetime(1_800_000); // 30 min
+        ds.setConnectionTimeout(30_000);
+        ds.setConnectionTestQuery("SELECT 1");
+        return ds;
     }
 }
