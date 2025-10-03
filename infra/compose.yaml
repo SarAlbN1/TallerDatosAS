@@ -69,7 +69,7 @@ services:
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - productos_data:/var/lib/mysql # Persist database data
-      - ./complete_init.sql:/docker-entrypoint-initdb.d/productos_init.sql:ro
+      - ./productos_init.sql:/docker-entrypoint-initdb.d/productos_init.sql:ro
 
   db_usuarios:
     image: mysql:8.4

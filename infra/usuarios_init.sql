@@ -64,8 +64,8 @@ ON DUPLICATE KEY UPDATE email=VALUES(email);
 
 INSERT INTO datos_personales (usuario_id, nombre, apellido, fecha_nacimiento, telefono, direccion, ciudad, pais, codigo_postal, documento_identidad, tipo_documento) VALUES
  (1, 'Admin', 'System', '1990-01-01', '+1-555-0001', '123 Admin St', 'New York', 'USA', '10001', 'ADM001', 'PASAPORTE'),
- (2, 'John', 'Doe', '1985-05-15', '+1-555-0002', '456 Main St', 'Los Angeles', 'USA', '90001', 'DNI12345678', 'DNI'),
- (3, 'Mary', 'Smith', '1992-08-20', '+1-555-0003', '789 Oak Ave', 'Chicago', 'USA', '60601', 'DNI87654321', 'DNI'),
+ (2, 'John', 'Doe', '1985-05-15', '+1-555-0002', '456 Main St', 'Los Angeles', 'USA', '90001', 'DNI12345678', 'CEDULA'),
+ (3, 'Mary', 'Smith', '1992-08-20', '+1-555-0003', '789 Oak Ave', 'Chicago', 'USA', '60601', 'DNI87654321', 'CEDULA'),
  (4, 'Robert', 'Johnson', '1988-03-10', '+1-555-0004', '321 Pine Rd', 'Houston', 'USA', '77001', 'PAS9876543', 'PASAPORTE')
 ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
