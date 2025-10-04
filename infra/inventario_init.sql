@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS items (
     sku VARCHAR(64) NOT NULL UNIQUE,
     nombre VARCHAR(160) NOT NULL,
     categoria_id BIGINT,
+    producto_id BIGINT,
     stock INT NOT NULL DEFAULT 0,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );
@@ -25,18 +26,18 @@ INSERT INTO categorias (nombre, descripcion) VALUES
  ('Computación','Equipos y accesorios de computación')
 ON DUPLICATE KEY UPDATE descripcion=VALUES(descripcion);
 
-INSERT INTO items (sku, nombre, categoria_id, stock) VALUES
- ('LAPTOP001','Laptop Dell Inspiron 15',3,10),
- ('LAPTOP002','Laptop HP Pavilion',3,15),
- ('MOUSE001','Mouse Logitech MX Master 3',3,50),
- ('KEYBOARD001','Teclado Mecánico Corsair K95',3,30),
- ('MONITOR001','Monitor Samsung 27" 4K',1,20),
- ('HEADSET001','Audífonos Sony WH-1000XM4',1,25),
- ('WEBCAM001','Webcam Logitech C920',1,40),
- ('PRINTER001','Impresora HP LaserJet Pro',2,12),
- ('DESK001','Escritorio Ajustable Eléctrico',2,8),
- ('CHAIR001','Silla Ergonómica Herman Miller',2,15)
-ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), stock=VALUES(stock);
+INSERT INTO items (sku, nombre, categoria_id, producto_id, stock) VALUES
+ ('LAPTOP001','Laptop Dell Inspiron 15',3,1,10),
+ ('LAPTOP002','Laptop HP Pavilion',3,2,15),
+ ('MOUSE001','Mouse Logitech MX Master 3',3,3,50),
+ ('KEYBOARD001','Teclado Mecánico Corsair K95',3,4,30),
+ ('MONITOR001','Monitor Samsung 27" 4K',1,5,20),
+ ('HEADSET001','Audífonos Sony WH-1000XM4',1,6,25),
+ ('WEBCAM001','Webcam Logitech C920',1,7,40),
+ ('PRINTER001','Impresora HP LaserJet Pro',2,8,12),
+ ('DESK001','Escritorio Ajustable Eléctrico',2,9,8),
+ ('CHAIR001','Silla Ergonómica Herman Miller',2,10,15)
+ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), stock=VALUES(stock), producto_id=VALUES(producto_id);
 
 SELECT 'Inventario categorias' label, COUNT(*) total FROM categorias UNION ALL
 SELECT 'Inventario items', COUNT(*) FROM items;
