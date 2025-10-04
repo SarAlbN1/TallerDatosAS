@@ -10,13 +10,17 @@ CREATE TABLE IF NOT EXISTS categorias (
 );
 
 CREATE TABLE IF NOT EXISTS items (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    sku VARCHAR(64) NOT NULL UNIQUE,
-    nombre VARCHAR(160) NOT NULL,
-    categoria_id BIGINT,
-    stock INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (categoria_id) REFERENCES categorias(id)
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  sku VARCHAR(64) NOT NULL UNIQUE,
+  nombre VARCHAR(160) NOT NULL,
+  categoria_id BIGINT,
+  producto_id BIGINT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  FOREIGN KEY (categoria_id) REFERENCES categorias(id),
+  INDEX idx_items_categoria_id (categoria_id),
+  INDEX idx_items_producto_id (producto_id)
 );
+
 
 -- Datos iniciales
 INSERT INTO categorias (nombre, descripcion) VALUES
