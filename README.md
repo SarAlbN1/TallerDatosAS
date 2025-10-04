@@ -1,9 +1,9 @@
-# TallerDatosAS - Sistema Completo de Gestión de Productos
+# TallerDatosAS - Sistema Distribuido con Transacciones JTA
 
-Este proyecto implementa un sistema completo de gestión de productos con arquitectura de dos niveles, cumpliendo todos los requisitos del taller:
+Este proyecto implementa un sistema completo de gestión de productos con arquitectura distribuida y transacciones ACID, cumpliendo todos los requisitos del taller:
 
-- **Punto 1**: Base de datos con Docker (MySQL)
-- **Punto 2**: Cliente pesado Java con JPA
+- **Punto 1**: Bases de datos distribuidas con Docker (3 instancias MySQL)
+- **Punto 2**: Cliente pesado Java con JPA y JTA (Java Transaction API)
 - **Punto 3**: Aplicación Web SPA (React)
 - **Punto 4**: Arquitectura de dos niveles con servicios REST/SOAP
 
@@ -12,18 +12,34 @@ Este proyecto implementa un sistema completo de gestión de productos con arquit
 ```
 TallerDatosAS/
 ├── infra/                    # Docker + MySQL + Datos de prueba
-├── client-java/             # Backend Spring Boot + JPA + REST/SOAP
+├── client-java/             # Backend Spring Boot + JTA + JPA + REST/SOAP
 ├── frontend-react/          # Frontend React SPA moderno
 ├── frontend-mpa/            # Frontend MPA para arquitectura de dos niveles
 └── README.md
 ```
+
+## 🌐 Bases de Datos Distribuidas
+
+El sistema utiliza **tres bases de datos independientes** para separar los dominios de negocio:
+
+| Base | Contenedor | Puerto Host | Script Init | Objetivo |
+|------|------------|------------|-------------|----------|
+| **inventario** | mysql-inventario | 3306 | `inventario_init.sql` | Gestión de stock y artículos |
+| **facturacion** | mysql-facturacion | 3307 | `facturacion_init.sql` | Clientes, facturas y líneas |
+| **pagos** | mysql-pagos | 3308 | `pagos_init.sql` | Métodos y transacciones de pago |
+
+### Características Técnicas:
+- **MySQL 8.4 LTS** con soporte XA para transacciones distribuidas
+- **JTA (Java Transaction API)** con Atomikos como transaction manager
+- **Two-Phase Commit** para garantizar consistencia ACID entre bases
+- **Configuración XA DataSource** separada para cada dominio
 
 ## 🚀 Instrucciones de Despliegue
 
 ### Prerrequisitos
 - **Java 21+** (OpenJDK recomendado)
 - **Node.js 18+** (para el frontend React)
-- **Docker y Docker Compose** (para la base de datos)
+- **Docker y Docker Compose** (para las bases de datos)
 - **Maven** (para el backend Java)
 
 ### 1. Configurar Java (macOS con Homebrew)
@@ -32,17 +48,32 @@ export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.j
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
-### 2. Levantar la Base de Datos con Datos de Prueba
+### 2. Levantar las Bases de Datos Distribuidas
 ```bash
 cd infra
 docker compose up -d
 ```
 
-**Nota**: La base de datos se inicializa automáticamente con:
-- 22 productos, 5 organizaciones, 8 categorías
-- Usuario: `equipo`, Contraseña: `123456`
+Credenciales (idénticas en los tres contenedores):
+- Usuario app: `equipo`
+- Contraseña: `123456`
+- Root: definido en `compose.yaml` (`MYSQL_ROOT_PASSWORD`)
+
+Cada script se ejecuta SOLO la primera vez (volumen vacío). Para re-ejecutar, elimina los volúmenes:
+```bash
+docker compose down
+docker volume rm $(docker volume ls -q | grep -E "inventario|facturacion|pagos")
+docker compose up -d
+```
 
 ### 3. Ejecutar el Backend
+#### Windows (PowerShell)
+```powershell
+cd client-java
+mvn spring-boot:run
+```
+
+#### macOS / Linux (bash/zsh)
 ```bash
 cd client-java
 export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home
@@ -88,7 +119,9 @@ xdg-open frontend-mpa/index.html # Linux
 - **Frontend MPA (Arquitectura 2 niveles)**: http://localhost:3001
 - **Backend API REST**: http://localhost:8080/api
 - **Backend SOAP**: http://localhost:8080/ws
-- **Base de datos MySQL**: localhost:3306
+- **BD Inventario**: localhost:3306 (db: inventario)
+- **BD Facturación**: localhost:3307 (db: facturacion)
+- **BD Pagos**: localhost:3308 (db: pagos)
 
 ### URLs Específicas del Frontend MPA:
 - **Dashboard Principal**: http://localhost:3001/
@@ -154,20 +187,143 @@ pkill -f "vite" || true
 cd frontend-react && npm run dev
 ```
 
+## 🔄 Transacciones Distribuidas con JTA 
+
+### Configuración Técnica
+El sistema implementa **Java Transaction API (JTA)** con **Atomikos 6.0.0** como gestor de transacciones para garantizar **consistencia ACID** entre tres bases MySQL 8.4 usando protocolo **Two-Phase Commit**.
+
+#### Tecnologías Clave:
+- **Atomikos 6.0.0** – Gestor JTA
+- **Spring Boot 3.3.5** (corrección respecto a referencias previas 3.4.0)
+- **Hibernate 6.x** con integración JTA
+- **MySQL 8.4** (3 instancias) con soporte XA
+- **Two-Phase Commit** (prepare → commit/rollback)
+- **@Transactional(propagation = REQUIRED, rollbackFor = Exception.class)** en métodos de servicio que participan en la transacción global
+- **pinGlobalTxToPhysicalConnection=true** para evitar errores XAER_INVAL / XAER_RMERR por reciclaje de conexiones
+
+#### Archivos Clave:
+```
+client-java/src/main/java/cliente/application/
+├── config/
+│   ├── DataSourceConfig.java              # XA DataSources
+│   ├── InventarioJpaConfig.java           # JPA Inventario
+│   ├── FacturacionJpaConfig.java          # JPA Facturación
+│   └── PagosJpaConfig.java                # JPA Pagos
+├── services/
+│   └── TransactionDistribuidaService.java # Lógica transaccional
+└── controllers/
+    └── TransactionController.java         # REST endpoints
+```
+
+### Endpoints de Prueba
+
+#### 1. Health Check
+```bash
+curl http://localhost:8080/api/transactions/health
+```
+
+#### 2. Transacción Distribuida Exitosa
+```bash
+curl -X POST "http://localhost:8080/api/transactions/venta-completa" \
+  -d "sku=LAPTOP001&cantidad=2&clienteId=1&metodoPagoId=TARJETA"
+```
+
+#### 3. Transacción con Rollback
+```bash
+curl -X POST "http://localhost:8080/api/transactions/simular-fallo" \
+  -d "sku=LAPTOP001&cantidad=1&clienteId=1&metodoPagoId=EFECTIVO"
+```
+
+### Escenarios de Prueba
+
+| Escenario | Qué hace | Resultado |
+|-----------|----------|-----------|
+| **Transacción Exitosa** | Stock ↓, Factura ✓, Pago ✓ | Datos en las 3 bases |
+| **Transacción con Fallo** | Stock ↓, Factura ✓, Pago ✗ | Rollback completo |
+| **Transacciones Simples** | Operación en 1 base | Solo se afecta 1 base |
+
+Para más detalles: **[Ver guía completa de testing](client-java/TESTING_TRANSACTIONS.md)**
+
+### 🔐 Por qué es Necesario `pinGlobalTxToPhysicalConnection`
+MySQL puede reasignar la conexión física dentro del pool mientras la transacción XA sigue abierta. Atomikos exige que la misma conexión física mantenga el contexto XA hasta `XA END`. Sin pinning, el driver puede entregar otra conexión y MySQL responde con **XAER_INVAL** / **XAER_RMERR** al preparar o confirmar. El parámetro asegura:
+
+- Rama XA anclada al mismo socket.
+- Eliminación de errores intermitentes en escenarios multi-escritura.
+- Integridad en prepare/commit sobre los tres recursos.
+
+Fragmento (DataSourceConfig.java):
+```java
+xaProps.setProperty("url", "jdbc:mysql://localhost:3306/inventario?...&pinGlobalTxToPhysicalConnection=true");
+xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
+```
+
+### 🧪 Script Automatizado de Pruebas
+Ejecuta 6 escenarios (éxito, rollback, operaciones individuales):
+```powershell
+./test-transactions.ps1
+```
+Éxito = todos ✅ y sin mensajes XAER_* en logs backend.
+
+### 🧵 Flujo `venta-completa`
+1. Actualiza stock (inventario)
+2. Crea factura (facturación)
+3. Registra pago (pagos)
+4. Error en cualquier paso → rollback total.
+
+Respuesta típica:
+```json
+{"status":"success","nuevoStock":8,"numeroFactura":"FCT-2025-00017","referenciaPago":"PAY-9f2c1d7a"}
+```
+
+### 🛠️ Runbook de Recuperación
+1. Detén backend.
+2. PowerShell (opcional): `Get-Process java | Stop-Process -Force`.
+3. Elimina logs Atomikos `tmlog*` en directorio raíz del módulo.
+4. Reinicia contenedores si hubo cambios en SQL: `docker compose restart` (en `infra`).
+5. Arranca backend: `mvn spring-boot:run`.
+6. Ejecuta pruebas: `./test-transactions.ps1`.
+
+### ❗ Checklist de Salud XA
+- [ ] `uniqueResourceName` distinto por datasource
+- [ ] URL incluye `pinGlobalTxToPhysicalConnection=true`
+- [ ] Propiedad explícita también seteada
+- [ ] Métodos con `@Transactional(propagation=REQUIRED, rollbackFor=Exception.class)`
+- [ ] Sin `@Primary` en múltiples EMF (solo donde se requiera en DataSource)
+- [ ] Pruebas 6/6 en verde
+
+### 🔍 Troubleshooting
+| Síntoma | Causa | Acción |
+|---------|-------|-------|
+| XAER_INVAL / XAER_RMERR | Conexión reciclada (falta pinning) | Verificar URL y propiedad; limpiar `tmlog*` |
+| Rollback parcial | Propagación incorrecta | Usar `REQUIRED` uniforme |
+| Lento / bloqueos | Pool insuficiente | Ajustar min/max pool Atomikos |
+| Errores tras reinicio abrupto | Journal inconsistente | Borrar `tmlog*` y reiniciar |
+| HTTP 400 genérico | Excepción oculta | Revisar stacktrace en logs |
+
+---
+
 ## 📋 Funcionalidades Implementadas
 
-### ✅ Punto 1 - Base de Datos con Docker
-- **MySQL 8.0** con persistencia de datos
-- **Docker Compose** configurado para despliegue automático
-- **Inicialización automática** con tablas y datos de prueba
-- **Puerto 3306** expuesto
-- **Credenciales**: Usuario `equipo`, Contraseña `123456`
+### ✅ Punto 1 - Bases de Datos Distribuidas
+- **MySQL 8.4 LTS (x3)** con persistencia independiente
+- **Docker Compose** para despliegue automático
+- **Inicialización automática** con esquemas y datos separados
+- **Puertos diferenciados**: 3306, 3307, 3308
+- **Soporte XA**: Configurado para transacciones distribuidas
 
-### ✅ Punto 2 - Cliente Pesado Java con JPA
-- **Spring Boot 3.4.0** con Java 21
-- **JPA con Hibernate** para mapeo objeto-relacional
-- **Entidades**: Product, Organization, Category con relaciones
-- **API REST completa**:
+### ✅ Punto 2 - Cliente Pesado Java con JPA + JTA
+- **Spring Boot 3.3.5** con Java 21
+- **JTA con Atomikos** para transacciones distribuidas  
+- **Configuraciones multiples de JPA** (una por dominio)
+- **Entidades distribuidas**: Items, Clientes, Facturas, Pagos
+- **API REST completa** con endpoints transaccionales:
+  - `GET /api/products` - Listar todos los productos
+  - `POST /api/products` - Crear nuevo producto
+  - `GET /api/organizations` - Listar organizaciones
+  - `POST /api/transactions/venta-completa` - Transacción distribuida
+  - `POST /api/transactions/simular-fallo` - Prueba de rollback
+- **Entidades distribuidas**: Items, Clientes, Facturas, Pagos
+- **API REST completa** con endpoints transaccionales:
   - `GET /api/products` - Listar todos los productos
   - `POST /api/products` - Crear nuevo producto
   - `GET /api/organizations` - Listar organizaciones
@@ -254,11 +410,11 @@ curl -X POST http://localhost:8080/api/products \
 ## 🔧 Tecnologías Utilizadas
 
 ### Backend
-- **Spring Boot 3.4.0** - Framework principal
+- **Spring Boot 3.3.5** - Framework principal
 - **Java 21** - Lenguaje de programación
 - **Spring Data JPA** - Abstracción de datos
 - **Hibernate** - ORM para MySQL
-- **MySQL 8.0** - Base de datos relacional
+- **MySQL 8.4 (3 instancias)** - Bases de datos relacionales aisladas
 - **Spring Web Services** - Servicios SOAP
 - **Maven** - Gestión de dependencias
 
@@ -282,7 +438,7 @@ curl -X POST http://localhost:8080/api/products \
 
 ### Infraestructura
 - **Docker & Docker Compose** - Contenedores
-- **MySQL 8.0** - Base de datos
+- **MySQL 8.4 (3 instancias)** - Bases de datos
 
 ## 📊 Estado del Proyecto
 
@@ -295,17 +451,36 @@ curl -X POST http://localhost:8080/api/products \
 
 ## 🔍 Estructura de la Base de Datos
 
-- **products**: Productos con relaciones a organizaciones y categorías
-- **organizations**: Organizaciones que ofrecen productos  
-- **categories**: Categorías de productos
+Ahora la capa de datos está distribuida en tres dominios independientes para favorecer separación de responsabilidades y facilitar escalado horizontal futuro:
+
+### Base `inventario` (Puerto 3306)
+- `categorias(id, nombre, descripcion)`
+- `items(id, sku, nombre, categoria_id, stock)`
+
+### Base `facturacion` (Puerto 3307)
+- `clientes(id, nombre, email, nif)`
+- `facturas(id, numero, fecha, cliente_id, total)`
+- `factura_detalle(id, factura_id, concepto, cantidad, precio_unitario)`
+
+### Base `pagos` (Puerto 3308)
+- `metodos_pago(id, codigo, descripcion)`
+- `pagos(id, referencia, fecha, importe, moneda, metodo_id, estado)`
+
+La base original usada por el backend (productos / organizations / categories) puede migrarse gradualmente a este esquema distribuido según evolución del proyecto.
 
 ## 📝 Notas Técnicas
 
 - **Backend**: Puerto 8080 (REST + SOAP)
 - **Frontend SPA**: Puerto 3000 (o disponible)
 - **Frontend MPA**: Puerto 3001 (servidor Python) o archivos HTML estáticos
-- **Base de datos**: Puerto 3306 (MySQL)
+- **Bases de datos**:
+   - Inventario: 3306 (schema: inventario)
+   - Facturación: 3307 (schema: facturacion)
+   - Pagos: 3308 (schema: pagos)
 - **Proxy**: Configurado en Vite para evitar CORS
 - **Persistencia**: Garantizada con volúmenes de Docker
-- **Datos**: 24 productos, 8 organizaciones, 8 categorías pre-cargadas
-- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend
+- **Datos iniciales**:
+   - inventario: 3 categorías, 4 ítems
+   - facturacion: 2 clientes, 2 facturas, 3 líneas
+   - pagos: 3 métodos, 3 transacciones
+- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend; datos preparados para futura separación de microservicios
