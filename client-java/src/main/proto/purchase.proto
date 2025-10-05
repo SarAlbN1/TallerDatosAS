@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package cliente.grpc.purchase;
+
+option java_multiple_files = true;
+option java_package = "cliente.grpc.purchase";
+option java_outer_classname = "PurchaseProto";
+
+// Servicio de compras
+service PurchaseService {
+    // Procesa una compra completa
+    rpc ProcessPurchase(PurchaseRequest) returns (PurchaseResponse);
+    
+    // Confirma una orden
+    rpc ConfirmOrder(OrderRequest) returns (OrderConfirmation);
+    
+    // Valida disponibilidad de stock
+    rpc ValidateStock(StockValidationRequest) returns (StockValidationResponse);
+}
+
+// Mensaje de solicitud de compra
+message PurchaseRequest {
+    repeated PurchaseItem items = 1;
+    int64 cliente_id = 2;
+    string metodo_pago = 3;
+    string request_id = 4;
+}
+
+// Item de compra
+message PurchaseItem {
+    string sku = 1;
+    int32 cantidad = 2;
+    double precio_unitario = 3;
+}
+
+// Respuesta de compra
+message PurchaseResponse {
+    string order_id = 1;
+    string status = 2;
+    string tx_id = 3;
+    int64 cliente_id = 4;
+    double total = 5;
+    string numero_factura = 6;
+    string referencia_pago = 7;
+    string fecha_procesamiento = 8;
+    repeated PurchaseItemResponse items = 9;
+    string message = 10;
+}
+
+// Item de respuesta de compra
+message PurchaseItemResponse {
+    string sku = 1;
+    string nombre = 2;
+    int32 cantidad = 3;
+    double precio_unitario = 4;
+    double subtotal = 5;
+}
+
+// Solicitud de confirmación de orden
+message OrderRequest {
+    string order_id = 1;
+    string tx_id = 2;
+    int64 cliente_id = 3;
+    string request_id = 4;
+}
+
+// Confirmación de orden
+message OrderConfirmation {
+    string order_id = 1;
+    string status = 2;
+    string tx_id = 3;
+    string confirmation_code = 4;
+    string fecha_confirmacion = 5;
+    string message = 6;
+}
+
+// Solicitud de validación de stock
+message StockValidationRequest {
+    string sku = 1;
+    int32 cantidad = 2;
+    string request_id = 3;
+}
+
+// Respuesta de validación de stock
+message StockValidationResponse {
+    bool disponible = 1;
+    string sku = 2;
+    int32 cantidad_solicitada = 3;
+    int32 stock_disponible = 4;
+    string message = 5;
+    string request_id = 6;
+}

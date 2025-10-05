@@ -388,7 +388,8 @@ Respuesta típica:
    - Ve a la sección "Productos (SOAP)"
    - Lista productos obtenidos de servicios SOAP
    - Visualiza respuestas XML SOAP
-   - Crea productos via servicios SOAP
+   - Crea productos via servicios SOAP segun tu diagnostico
+   
 
 4. **Gestión de Organizaciones y Categorías**
    - Navega a las secciones correspondientes

@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package cliente.grpc.user;
+
+option java_multiple_files = true;
+option java_package = "cliente.grpc.user";
+option java_outer_classname = "UserProto";
+
+// Servicio de usuarios
+service UserService {
+    // Obtiene un usuario aleatorio
+    rpc GetRandomUser(GetRandomUserRequest) returns (GetRandomUserResponse);
+    
+    // Obtiene un usuario por ID
+    rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
+    
+    // Lista todos los usuarios
+    rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+}
+
+// Solicitud de usuario aleatorio
+message GetRandomUserRequest {
+    string request_id = 1;
+}
+
+// Respuesta de usuario aleatorio
+message GetRandomUserResponse {
+    User user = 1;
+    string request_id = 2;
+    string status = 3;
+    string message = 4;
+}
+
+// Solicitud de usuario por ID
+message GetUserByIdRequest {
+    int64 user_id = 1;
+    string request_id = 2;
+}
+
+// Respuesta de usuario por ID
+message GetUserByIdResponse {
+    User user = 1;
+    string request_id = 2;
+    string status = 3;
+    string message = 4;
+}
+
+// Solicitud de todos los usuarios
+message GetAllUsersRequest {
+    string request_id = 1;
+}
+
+// Respuesta de todos los usuarios
+message GetAllUsersResponse {
+    repeated User users = 1;
+    string request_id = 2;
+    string status = 3;
+    string message = 4;
+}
+
+// Datos de usuario
+message User {
+    int64 id = 1;
+    string nombre = 2;
+    string email = 3;
+    string telefono = 4;
+    string direccion = 5;
+    string ciudad = 6;
+    string pais = 7;
+}
