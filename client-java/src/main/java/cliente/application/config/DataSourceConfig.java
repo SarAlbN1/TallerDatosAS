@@ -20,18 +20,18 @@ public class DataSourceConfig {
         dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
         
         Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3306/inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xaProps.setProperty(
+            "url",
+            "jdbc:mysql://localhost:3306/inventario?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&pinGlobalTxToPhysicalConnection=true&useUnicode=true&characterEncoding=UTF-8&autoReconnect=true");
         xaProps.setProperty("user", "equipo");
         xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
         dataSource.setXaProperties(xaProps);
         
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
+        dataSource.setMinPoolSize(2);
+        dataSource.setMaxPoolSize(15);
         dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
+        dataSource.setBorrowConnectionTimeout(120);
         dataSource.setTestQuery("SELECT 1");
         
         return dataSource;
@@ -44,18 +44,18 @@ public class DataSourceConfig {
         dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
         
         Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3307/facturacion?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xaProps.setProperty(
+            "url",
+            "jdbc:mysql://localhost:3307/facturacion?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&pinGlobalTxToPhysicalConnection=true&useUnicode=true&characterEncoding=UTF-8&autoReconnect=true");
         xaProps.setProperty("user", "equipo");
         xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
         dataSource.setXaProperties(xaProps);
         
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
+        dataSource.setMinPoolSize(2);
+        dataSource.setMaxPoolSize(15);
         dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
+        dataSource.setBorrowConnectionTimeout(120);
         dataSource.setTestQuery("SELECT 1");
         
         return dataSource;
@@ -68,18 +68,18 @@ public class DataSourceConfig {
         dataSource.setXaDataSourceClassName("com.mysql.cj.jdbc.MysqlXADataSource");
         
         Properties xaProps = new Properties();
-    xaProps.setProperty(
-        "url",
-        "jdbc:mysql://localhost:3308/pagos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&defaultAuthenticationPlugin=mysql_native_password&pinGlobalTxToPhysicalConnection=true");
+        xaProps.setProperty(
+            "url",
+            "jdbc:mysql://localhost:3308/pagos?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&pinGlobalTxToPhysicalConnection=true&useUnicode=true&characterEncoding=UTF-8&autoReconnect=true");
         xaProps.setProperty("user", "equipo");
         xaProps.setProperty("password", "123456");
-    xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
+        xaProps.setProperty("pinGlobalTxToPhysicalConnection", "true");
         dataSource.setXaProperties(xaProps);
         
-        dataSource.setMinPoolSize(3);
-        dataSource.setMaxPoolSize(25);
+        dataSource.setMinPoolSize(2);
+        dataSource.setMaxPoolSize(15);
         dataSource.setMaxLifetime(20000);
-        dataSource.setBorrowConnectionTimeout(30);
+        dataSource.setBorrowConnectionTimeout(120);
         dataSource.setTestQuery("SELECT 1");
         
         return dataSource;
