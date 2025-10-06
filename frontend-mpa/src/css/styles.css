@@ -713,6 +713,32 @@ body {
     }
 }
 
+/* Estilos para botones de carrito */
+.card-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.card-actions .btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.badge {
+    background: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
 @media (max-width: 480px) {
     .container {
         padding: 0 15px;

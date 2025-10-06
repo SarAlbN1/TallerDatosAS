@@ -23,7 +23,7 @@ public class CheckoutRequest {
     @Valid
     private List<CheckoutItem> items;
     
-    @NotNull(message = "Cliente ID es requerido")
+    // FIX: permitir null para que el backend resuelva usuario aleatorio si no se envía
     private Long clienteId;
     
     @NotNull(message = "Método de pago es requerido")

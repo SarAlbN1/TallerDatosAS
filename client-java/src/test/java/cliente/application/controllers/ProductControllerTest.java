@@ -1,7 +1,9 @@
 package cliente.application.controllers;
 
+import cliente.application.controllers.rest.ProductController;
 import cliente.application.models.inventario.Item;
-import cliente.application.services.InventoryServiceImpl;
+import cliente.application.services.inventario.ItemService;
+import cliente.application.services.productos.CategoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,10 @@ class ProductControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private InventoryServiceImpl inventoryService;
+    private ItemService inventoryService;
+
+    @MockBean
+    private CategoryService categoryService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -49,7 +54,7 @@ class ProductControllerTest {
             .stock(5)
             .build();
 
-        when(inventoryService.getAllProducts()).thenReturn(Arrays.asList(item1, item2));
+        when(inventoryService.getAllItems()).thenReturn(Arrays.asList(item1, item2));
 
         // When & Then
         mockMvc.perform(get("/api/products"))
@@ -73,7 +78,7 @@ class ProductControllerTest {
             .stock(10)
             .build();
 
-        when(inventoryService.getProductById(1L)).thenReturn(Optional.of(item));
+        when(inventoryService.getItemById(1L)).thenReturn(Optional.of(item));
 
         // When & Then
         mockMvc.perform(get("/api/products/1"))
@@ -86,7 +91,7 @@ class ProductControllerTest {
     @Test
     void getProductById_WhenProductNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        when(inventoryService.getProductById(999L)).thenReturn(Optional.empty());
+        when(inventoryService.getItemById(999L)).thenReturn(Optional.empty());
 
         // When & Then
         mockMvc.perform(get("/api/products/999"))

@@ -130,11 +130,196 @@ xdg-open frontend-mpa/index.html # Linux
 - **Organizaciones**: http://localhost:3001/src/pages/organizations.html
 - **Categorías**: http://localhost:3001/src/pages/categories.html
 
-### APIs Disponibles:
+## 🌐 **Endpoints para Frontend**
+
+### **Endpoints REST (Puerto 8080)**
+
+#### **Productos**
+```
+GET /api/products
+- Descripción: Obtiene todos los productos disponibles
+- Respuesta: Lista de productos con información completa
+
+GET /api/products/{id}
+- Descripción: Obtiene un producto específico por ID
+- Parámetros: id (Long)
+- Respuesta: Detalles del producto
+```
+
+#### **Checkout/Compra**
+```
+POST /api/checkout
+- Descripción: Procesa una compra completa
+- Content-Type: application/json
+- Body: {
+    "clienteId": 123, // Opcional, si no se envía se obtiene usuario aleatorio
+    "metodoPago": "TARJETA", // TARJETA, EFECTIVO, TRANSFERENCIA
+    "items": [
+      {
+        "sku": "PROD-001",
+        "cantidad": 2
+      }
+    ]
+  }
+- Respuesta: {
+    "orderId": "ORDER-ABC123",
+    "status": "COMPLETED",
+    "txId": "TX-1234567890",
+    "clienteId": 123,
+    "total": 200.00,
+    "numeroFactura": "FACT-1234567890",
+    "referenciaPago": "PAG-1234567890",
+    "fechaProcesamiento": "2024-10-05T20:00:00",
+    "items": [...],
+    "message": "Compra procesada exitosamente"
+  }
+```
+
+#### **Categorías**
+```
+GET /api/categories
+- Descripción: Obtiene todas las categorías de productos
+- Respuesta: Lista de categorías
+
+GET /api/categories/{id}
+- Descripción: Obtiene una categoría específica
+- Parámetros: id (Long)
+- Respuesta: Detalles de la categoría
+```
+
+#### **Organizaciones**
+```
+GET /api/organizations
+- Descripción: Obtiene todas las organizaciones
+- Respuesta: Lista de organizaciones
+
+GET /api/organizations/{id}
+- Descripción: Obtiene una organización específica
+- Parámetros: id (Long)
+- Respuesta: Detalles de la organización
+```
+
+### **Endpoints SOAP (Puerto 8080)**
+
+#### **Servicio de Usuarios**
+```
+POST /soap/users
+- Content-Type: text/xml
+- Descripción: Servicio SOAP para obtener datos de usuarios
+- Operaciones disponibles:
+  - getRandomUser: Obtiene un usuario aleatorio
+  - validatePayment: Valida información de pago
+```
+
+**Ejemplo de request SOAP:**
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <getRandomUser xmlns="http://cliente/soap/users">
+    </getRandomUser>
+  </soap:Body>
+</soap:Envelope>
+```
+
+### **Endpoints gRPC (Puerto 9090)**
+
+#### **Servicio de Compras**
+```
+Servicio: PurchaseService
+- processPurchase: Procesa una compra
+- confirmOrder: Confirma una orden
+- validateStock: Valida disponibilidad de stock
+```
+
+#### **Servicio de Usuarios**
+```
+Servicio: UserService
+- getRandomUser: Obtiene usuario aleatorio
+- getUserById: Obtiene usuario por ID
+- getAllUsers: Lista todos los usuarios
+```
+
+### **🎯 Flujo de Compra Recomendado para el Frontend**
+
+#### **1. Navegación por Catálogo**
+```javascript
+// Obtener productos
+const response = await fetch('http://localhost:8080/api/products');
+const products = await response.json();
+```
+
+#### **2. Agregar al Carrito (Local)**
+```javascript
+// Carrito local en localStorage
+const cart = JSON.parse(localStorage.getItem('shoppingCart') || '[]');
+cart.push({...product, quantity: 1});
+localStorage.setItem('shoppingCart', JSON.stringify(cart));
+```
+
+#### **3. Procesar Compra**
+```javascript
+// Checkout
+const checkoutData = {
+  metodoPago: 'TARJETA',
+  items: cart.map(item => ({
+    sku: item.sku,
+    cantidad: item.quantity
+  }))
+};
+
+const response = await fetch('http://localhost:8080/api/checkout', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(checkoutData)
+});
+
+const result = await response.json();
+console.log('Compra procesada:', result);
+```
+
+### **📋 Configuración del Frontend**
+
+#### **URLs Base**
+```javascript
+const API_BASE_URL = 'http://localhost:8080';
+const SOAP_URL = 'http://localhost:8080/soap/users';
+const GRPC_URL = 'localhost:9090'; // Para conexiones gRPC
+```
+
+#### **Headers Recomendados**
+```javascript
+const headers = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json'
+};
+```
+
+### **🔍 Documentación API**
+
+La aplicación incluye **Swagger/OpenAPI** disponible en:
+```
+http://localhost:8080/swagger-ui.html
+```
+
+### **⚠️ Notas Importantes**
+
+1. **Puerto 8080**: REST y SOAP
+2. **Puerto 9090**: gRPC
+3. **CORS**: Configurado para permitir conexiones desde el frontend
+4. **Autenticación**: No requerida para estos endpoints
+5. **Formato de Respuesta**: JSON para REST, XML para SOAP, Protocol Buffers para gRPC
+
+### **APIs Disponibles:**
 - **REST Products**: http://localhost:8080/api/products
 - **REST Organizations**: http://localhost:8080/api/organizations
 - **REST Categories**: http://localhost:8080/api/categories
+- **REST Checkout**: http://localhost:8080/api/checkout
 - **SOAP WSDL**: http://localhost:8080/ws/products.wsdl
+- **SOAP Users**: http://localhost:8080/soap/users
+- **gRPC Purchase**: localhost:9090 (PurchaseService)
+- **gRPC Users**: localhost:9090 (UserService)
 
 ## ✅ Verificación del Despliegue
 

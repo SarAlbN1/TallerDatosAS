@@ -1,8 +1,10 @@
-package cliente.application.controllers;
+package cliente.application.controllers.rest;
 
 import cliente.application.dto.ProductResponse;
 import cliente.application.models.inventario.Item;
-import cliente.application.services.InventoryServiceImpl;
+import cliente.application.models.productos.Category;
+import cliente.application.services.inventario.ItemService;
+import cliente.application.services.productos.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -31,7 +33,8 @@ import java.util.stream.Collectors;
 @Tag(name = "Product Management", description = "API para gestión de productos")
 public class ProductController {
     
-    private final InventoryServiceImpl inventoryService;
+    private final ItemService itemService;
+    private final CategoryService categoryService;
     
     /**
      * Lista todos los productos disponibles
@@ -46,7 +49,7 @@ public class ProductController {
         log.info("Solicitando lista de productos");
         
         try {
-            List<Item> items = inventoryService.getAllProducts();
+            List<Item> items = itemService.getAllItems();
             List<ProductResponse> products = items.stream()
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
@@ -75,7 +78,7 @@ public class ProductController {
         log.info("Solicitando producto con ID: {}", id);
         
         try {
-            return inventoryService.getProductById(id)
+            return itemService.getItemById(id)
                 .map(item -> {
                     log.info("Producto encontrado: {}", item.getNombre());
                     return ResponseEntity.ok(mapToProductResponse(item));
@@ -91,6 +94,26 @@ public class ProductController {
         }
     }
     
+    /**
+     * Lista nombres de categorías
+     */
+    @GetMapping("/categories")
+    @Operation(summary = "Listar categorías", description = "Obtiene lista de nombres de categorías")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<List<String>> getAllCategories() {
+        log.info("Solicitando lista de categorías");
+        try {
+            List<Category> cats = categoryService.findAll();
+            List<String> names = cats.stream().map(Category::getName).collect(java.util.stream.Collectors.toList());
+            return ResponseEntity.ok(names);
+        } catch (Exception e) {
+            log.error("Error obteniendo categorías: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
     
     /**
      * Mapea un Item a ProductResponse
@@ -107,3 +130,7 @@ public class ProductController {
             .build();
     }
 }
+
+
+
+
