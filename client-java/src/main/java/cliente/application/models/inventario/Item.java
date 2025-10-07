@@ -24,7 +24,7 @@ public class Item {
     @Column(name = "nombre", nullable = false, length = 160)
     private String nombre;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "categoria_id")
     private CategoriaInventario categoria;
     

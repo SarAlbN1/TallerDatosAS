@@ -15,7 +15,7 @@ import java.util.Map;
 @EnableJpaRepositories(
     basePackages = "cliente.application.repositories.facturacion",
     entityManagerFactoryRef = "facturacionEntityManagerFactory",
-    transactionManagerRef = "transactionManager"
+    transactionManagerRef = "jtaTransactionManager"
 )
 public class FacturacionJpaConfig {
 

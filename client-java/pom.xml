@@ -133,6 +133,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
         <configuration>
           <parameters>true</parameters>
           <annotationProcessorPaths>
@@ -183,6 +184,28 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- JAXB plugin for SOAP classes generation -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>jaxb2-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>xjc</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <sources>
+            <source>src/main/resources/xsd/users.xsd</source>
+          </sources>
+          <packageName>cliente.soap.users</packageName>
+          <outputDirectory>target/generated-sources/jaxb</outputDirectory>
+          <addCompileSourceRoot>true</addCompileSourceRoot>
+        </configuration>
       </plugin>
     </plugins>
   </build>

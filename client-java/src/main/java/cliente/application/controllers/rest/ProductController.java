@@ -97,7 +97,7 @@ public class ProductController {
     /**
      * Lista nombres de categorías
      */
-    @GetMapping("/categories")
+    @GetMapping("/product-categories")
     @Operation(summary = "Listar categorías", description = "Obtiene lista de nombres de categorías")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de categorías obtenida"),

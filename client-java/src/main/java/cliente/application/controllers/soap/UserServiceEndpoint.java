@@ -55,6 +55,7 @@ public class UserServiceEndpoint {
             user.setDireccion(userDto.getDireccion());
             user.setCiudad(userDto.getCiudad());
             user.setPais(userDto.getPais());
+            
             GetRandomUserResponse response = new GetRandomUserResponse();
             response.setUser(user);
             response.setRequestId(request.getRequestId());
@@ -89,6 +90,35 @@ public class UserServiceEndpoint {
             response.setRequestId(request.getRequestId());
             response.setStatus("ERROR");
             response.setMessage("Error validando pago: " + e.getMessage());
+            return response;
+        }
+    }
+    
+    @PayloadRoot(namespace = NAMESPACE_URI, localPart = "GetPaymentMethodsRequest")
+    @ResponsePayload
+    public GetPaymentMethodsResponse getPaymentMethods(@RequestPayload GetPaymentMethodsRequest request) {
+        log.info("SOAP: Solicitando métodos de pago - Request ID: {}", request.getRequestId());
+        try {
+            GetPaymentMethodsResponse response = new GetPaymentMethodsResponse();
+            response.setRequestId(request.getRequestId());
+            response.setStatus("SUCCESS");
+            
+            // Crear lista de métodos de pago
+            PaymentMethods paymentMethods = new PaymentMethods();
+            paymentMethods.getPaymentMethod().add("TARJETA");
+            paymentMethods.getPaymentMethod().add("PAYPAL");
+            paymentMethods.getPaymentMethod().add("TRANSFERENCIA");
+            paymentMethods.getPaymentMethod().add("EFECTIVO");
+            paymentMethods.getPaymentMethod().add("BITCOIN");
+            paymentMethods.getPaymentMethod().add("NEQUI");
+            
+            response.setPaymentMethods(paymentMethods);
+            return response;
+        } catch (Exception e) {
+            log.error("SOAP: Error obteniendo métodos de pago: {}", e.getMessage());
+            GetPaymentMethodsResponse response = new GetPaymentMethodsResponse();
+            response.setRequestId(request.getRequestId());
+            response.setStatus("ERROR");
             return response;
         }
     }

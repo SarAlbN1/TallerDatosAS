@@ -15,7 +15,7 @@ import java.util.Map;
 @EnableJpaRepositories(
     basePackages = "cliente.application.repositories.inventario",
     entityManagerFactoryRef = "inventarioEntityManagerFactory",
-    transactionManagerRef = "transactionManager"
+    transactionManagerRef = "jtaTransactionManager"
 )
 public class InventarioJpaConfig {
 

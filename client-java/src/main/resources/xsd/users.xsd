@@ -33,6 +33,24 @@
         </xs:complexType>
     </xs:element>
 
+    <xs:element name="GetPaymentMethodsRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="requestId" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GetPaymentMethodsResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="paymentMethods" type="tns:PaymentMethods"/>
+                <xs:element name="requestId" type="xs:string" minOccurs="0"/>
+                <xs:element name="status" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
     <!-- Elementos de respuesta -->
     <xs:element name="GetRandomUserResponse">
         <xs:complexType>
@@ -76,6 +94,12 @@
             <xs:element name="direccion" type="xs:string"/>
             <xs:element name="ciudad" type="xs:string"/>
             <xs:element name="pais" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PaymentMethods">
+        <xs:sequence>
+            <xs:element name="paymentMethod" type="xs:string" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
