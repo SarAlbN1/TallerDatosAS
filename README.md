@@ -203,41 +203,58 @@ GET /api/organizations/{id}
 
 #### **Servicio de Usuarios**
 ```
-POST /soap/users
-- Content-Type: text/xml
-- Descripción: Servicio SOAP para obtener datos de usuarios
+POST /ws
+- Content-Type: text/xml; charset=utf-8
+- SOAPAction: GetRandomUser | GetPaymentMethods
+- Descripción: Servicio SOAP para obtener datos de usuarios y métodos de pago
 - Operaciones disponibles:
-  - getRandomUser: Obtiene un usuario aleatorio
-  - validatePayment: Valida información de pago
+  - GetRandomUser: Obtiene un usuario aleatorio con datos de envío
+  - GetPaymentMethods: Obtiene métodos de pago disponibles
 ```
 
-**Ejemplo de request SOAP:**
+**Ejemplo de request SOAP - Usuario Aleatorio:**
 ```xml
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-    <getRandomUser xmlns="http://cliente/soap/users">
-    </getRandomUser>
+    <GetRandomUserRequest xmlns="http://cliente.com/users">
+      <requestId>REQ-001</requestId>
+    </GetRandomUserRequest>
   </soap:Body>
 </soap:Envelope>
 ```
 
-### **Endpoints gRPC (Puerto 9090)**
+**Ejemplo de request SOAP - Métodos de Pago:**
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetPaymentMethodsRequest xmlns="http://cliente.com/users">
+      <requestId>REQ-002</requestId>
+    </GetPaymentMethodsRequest>
+  </soap:Body>
+</soap:Envelope>
+```
 
-#### **Servicio de Compras**
+### **Endpoints gRPC (Puerto 9090) - IMPLEMENTACIÓN LOCAL**
+
+**Nota**: Los servicios gRPC están implementados localmente y funcionan como servicios simulados dentro del mismo backend. No hay servicios gRPC externos corriendo en el puerto 9090.
+
+#### **Servicio de Compras (Local)**
 ```
-Servicio: PurchaseService
-- processPurchase: Procesa una compra
-- confirmOrder: Confirma una orden
-- validateStock: Valida disponibilidad de stock
+Servicio: PurchaseService (implementado en GrpcClientService)
+- processPurchase: Procesa una compra usando servicios locales
+- confirmOrder: Confirma una orden localmente
+- validateStock: Valida disponibilidad de stock localmente
 ```
 
-#### **Servicio de Usuarios**
+#### **Servicio de Usuarios (Local)**
 ```
-Servicio: UserService
-- getRandomUser: Obtiene usuario aleatorio
-- getUserById: Obtiene usuario por ID
-- getAllUsers: Lista todos los usuarios
+Servicio: UserService (implementado en GrpcClientService)
+- getRandomUser: Obtiene usuario aleatorio de la base de datos local
+- getUserById: Obtiene usuario por ID de la base local
+- getAllUsers: Lista todos los usuarios de la base local
 ```
+
+**Estado Actual**: Los servicios gRPC están configurados para usar implementaciones locales en lugar de servicios externos, lo que permite que el checkout funcione correctamente sin dependencias externas.
 
 ### **🎯 Flujo de Compra Recomendado para el Frontend**
 
@@ -316,10 +333,8 @@ http://localhost:8080/swagger-ui.html
 - **REST Organizations**: http://localhost:8080/api/organizations
 - **REST Categories**: http://localhost:8080/api/categories
 - **REST Checkout**: http://localhost:8080/api/checkout
-- **SOAP WSDL**: http://localhost:8080/ws/products.wsdl
-- **SOAP Users**: http://localhost:8080/soap/users
-- **gRPC Purchase**: localhost:9090 (PurchaseService)
-- **gRPC Users**: localhost:9090 (UserService)
+- **SOAP Users**: http://localhost:8080/ws (GetRandomUser, GetPaymentMethods)
+- **gRPC Services**: Implementados localmente (no requieren puerto 9090)
 
 ## ✅ Verificación del Despliegue
 
@@ -526,6 +541,9 @@ Respuesta típica:
   - 📱 **Vista responsive** para móviles y desktop
   - ➕ **Creación** de productos, organizaciones y categorías
   - 👁️ **Detalles** de productos en modal
+  - 🛒 **Carrito de compras** con gestión local
+  - 💳 **Checkout completo** con SOAP para datos de usuario y métodos de pago
+  - ✅ **Confirmación de compra** con modal mejorado
   - 🎨 **Animaciones** suaves con Framer Motion
   - 🔄 **Estados de carga** y manejo de errores
 
@@ -533,12 +551,13 @@ Respuesta típica:
 - **Servicios SOAP** implementados con Spring Web Services
 - **Endpoint SOAP**: `http://localhost:8080/ws`
 - **Operaciones SOAP**:
-  - `GetProducts` - Obtener lista de productos
-  - `CreateProduct` - Crear nuevo producto
+  - `GetRandomUser` - Obtener usuario aleatorio con datos de envío
+  - `GetPaymentMethods` - Obtener métodos de pago disponibles
 - **XSD Schema** para validación de mensajes SOAP
 - **Aplicación MPA** que consume servicios REST y SOAP
 - **Nivel de Presentación**: Frontend MPA con múltiples páginas
 - **Nivel de Datos**: Servicios REST y SOAP del backend
+- **Integración completa**: Frontend SPA con carrito, checkout y confirmación
 
 ## 🎯 Cómo Usar la Aplicación
 
@@ -549,12 +568,20 @@ Respuesta típica:
    - Usa la **búsqueda** para encontrar productos específicos
    - Aplica **filtros** por organización o categoría
 
-2. **Crear Nuevos Elementos**
+2. **Comprar Productos**
+   - Haz clic en **"Agregar al Carrito"** en cualquier producto
+   - Ve el carrito haciendo clic en el ícono del carrito en el header
+   - Haz clic en **"Proceder al Pago"** para iniciar el checkout
+   - El sistema obtendrá automáticamente un usuario aleatorio y métodos de pago via SOAP
+   - Selecciona método de pago y confirma la compra
+   - Ve la confirmación con todos los detalles de la orden
+
+3. **Crear Nuevos Elementos**
    - Haz clic en el botón **"+"** en el header
    - Selecciona qué crear: Producto, Organización o Categoría
    - Completa el formulario y guarda
 
-3. **Ver Detalles**
+4. **Ver Detalles**
    - Haz clic en cualquier producto para ver detalles completos
    - Modal con información de organización y categoría
 
@@ -634,6 +661,29 @@ curl -X POST http://localhost:8080/api/products \
 | 2 | ✅ | Cliente Java con JPA |
 | 3 | ✅ | Aplicación Web SPA |
 | 4 | ✅ | Arquitectura de dos niveles (MPA + REST/SOAP) |
+
+## 🆕 Mejoras Recientes
+
+### **Frontend SPA (React)**
+- ✅ **Carrito de compras** completamente funcional
+- ✅ **Checkout integrado** con SOAP para datos de usuario y métodos de pago
+- ✅ **Confirmación de compra** con modal mejorado y diseño consistente
+- ✅ **Parsing de SOAP** corregido para manejar namespaces correctamente
+- ✅ **UI/UX mejorada** con eliminación de secciones duplicadas
+- ✅ **CORS configurado** para servicios SOAP
+
+### **Backend (Spring Boot)**
+- ✅ **Servicios SOAP actualizados** con GetRandomUser y GetPaymentMethods
+- ✅ **gRPC local implementado** para evitar dependencias externas
+- ✅ **Checkout funcional** usando servicios locales en lugar de gRPC externos
+- ✅ **XSD Schema actualizado** para incluir métodos de pago
+- ✅ **CORS configurado** para todos los endpoints SOAP
+
+### **Integración**
+- ✅ **Flujo completo de compra** desde catálogo hasta confirmación
+- ✅ **Datos de usuario** obtenidos via SOAP automáticamente
+- ✅ **Métodos de pago** obtenidos via SOAP y mostrados en checkout
+- ✅ **Procesamiento de compra** funcional con respuesta completa
 
 ## 🔍 Estructura de la Base de Datos
 
