@@ -1,5 +1,7 @@
 package cliente.application.services;
 
+import cliente.application.events.VentaCompletadaEvent;
+import cliente.application.kafka.VentaEventProducer;
 import cliente.application.models.inventario.Item;
 import cliente.application.models.facturacion.Cliente;
 import cliente.application.models.facturacion.Factura;
@@ -12,10 +14,10 @@ import cliente.application.repositories.facturacion.ClienteRepository;
 import cliente.application.repositories.facturacion.FacturaRepository;
 import cliente.application.repositories.pagos.MetodoPagoRepository;
 import cliente.application.repositories.pagos.PagoRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,8 +34,9 @@ public class CheckoutCoordinatorService {
     private final FacturaRepository facturaRepository;
     private final MetodoPagoRepository metodoPagoRepository;
     private final PagoRepository pagoRepository;
+    private final VentaEventProducer ventaEventProducer;
 
-    @Transactional
+    @Transactional(transactionManager = "jtaTransactionManager")
     public String procesarVentaDemo(String sku, Integer cantidad, Long clienteId, String metodoPagoCodigo) {
         log.info("Iniciando 2PC demo: {} unidades de {}", cantidad, sku);
 
@@ -88,6 +91,32 @@ public class CheckoutCoordinatorService {
 
         pagoRepository.save(pago);
 
+        // 4) Publicar evento de venta completada a Kafka
+        try {
+            VentaCompletadaEvent event = VentaCompletadaEvent.builder()
+                .facturaId(numeroFactura)
+                .clienteId(clienteId)
+                .clienteEmail(cliente.getEmail())
+                .productos(List.of(VentaCompletadaEvent.ProductoVenta.builder()
+                    .sku(sku)
+                    .nombre(item.getNombre())
+                    .cantidad(cantidad)
+                    .precio(precioUnitario)
+                    .proveedor(determinarProveedor(sku)) // Lógica simple para determinar proveedor
+                    .build()))
+                .total(total)
+                .fecha(LocalDateTime.now())
+                .metodoPago(metodoPago.getDescripcion())
+                .referenciaPago(referenciaPago)
+                .build();
+
+            ventaEventProducer.publicarVentaCompletada(event);
+            log.info("📤 Evento de venta publicado a Kafka: {}", numeroFactura);
+        } catch (Exception e) {
+            log.error("❌ Error publicando evento de venta a Kafka: {}", e.getMessage(), e);
+            // No lanzamos excepción para no afectar la transacción principal
+        }
+
         log.info("2PC demo OK - Factura: {} - Pago: {}", numeroFactura, referenciaPago);
         return "OK - Factura: " + numeroFactura + " - Pago: " + referenciaPago;
     }
@@ -96,5 +125,19 @@ public class CheckoutCoordinatorService {
     public void simularFalloRollback(String sku, Integer cantidad, Long clienteId, String metodoPagoCodigo) {
         procesarVentaDemo(sku, cantidad, clienteId, metodoPagoCodigo);
         throw new RuntimeException("Fallo simulado - rollback global");
+    }
+
+    /**
+     * Lógica simple para determinar el proveedor basado en el SKU
+     * En un sistema real, esto vendría de la base de datos o configuración
+     */
+    private String determinarProveedor(String sku) {
+        if (sku.startsWith("LAPTOP") || sku.startsWith("PC")) {
+            return "a"; // Proveedor A - Tecnología
+        } else if (sku.startsWith("MOUSE") || sku.startsWith("TECLADO")) {
+            return "b"; // Proveedor B - Periféricos
+        } else {
+            return "c"; // Proveedor C - Otros
+        }
     }
 }

@@ -1,5 +1,6 @@
 package cliente.application.models.usuarios;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DatosFinancieros {
 
     @Id
@@ -22,6 +24,7 @@ public class DatosFinancieros {
     @JoinColumn(name = "usuario_id", nullable = false, unique = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnoreProperties({"datosPersonales", "datosFinancieros"})
     private Usuario usuario;
 
     @Column(name = "numero_cuenta", length = 34)

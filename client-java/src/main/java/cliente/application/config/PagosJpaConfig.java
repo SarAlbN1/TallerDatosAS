@@ -15,7 +15,7 @@ import java.util.Map;
 @EnableJpaRepositories(
     basePackages = "cliente.application.repositories.pagos",
     entityManagerFactoryRef = "pagosEntityManagerFactory",
-    transactionManagerRef = "transactionManager"
+    transactionManagerRef = "jtaTransactionManager"
 )
 public class PagosJpaConfig {
 

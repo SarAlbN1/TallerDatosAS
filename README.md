@@ -1,60 +1,75 @@
-# TallerDatosAS - Sistema Distribuido con Transacciones JTA
+# TallerDatosAS - Sistema Distribuido con Transacciones JTA y Kafka
 
-Este proyecto implementa un sistema completo de gestión de productos con arquitectura distribuida y transacciones ACID, cumpliendo todos los requisitos del taller:
+Este proyecto implementa un sistema completo de gestión de productos con arquitectura distribuida, transacciones ACID y notificaciones asíncronas con Kafka, cumpliendo todos los requisitos del taller:
 
-- **Punto 1**: Bases de datos distribuidas con Docker (3 instancias MySQL)
-- **Punto 2**: Cliente pesado Java con JPA y JTA (Java Transaction API)
-- **Punto 3**: Aplicación Web SPA (React)
-- **Punto 4**: Arquitectura de dos niveles con servicios REST/SOAP
+- **Punto 1**: Bases de datos distribuidas con Docker (5 instancias MySQL + Kafka)
+- **Punto 2**: Cliente pesado Java con JPA, JTA y Kafka (Java Transaction API)
+- **Punto 3**: Aplicación Web SPA (React) con carrito y checkout
+- **Punto 4**: Arquitectura de dos niveles con servicios REST/SOAP/gRPC
+- **Punto 5**: Sistema de notificaciones Kafka con proveedores distribuidos
 
 ## 🏗️ Arquitectura del Sistema
 
 ```
 TallerDatosAS/
-├── infra/                    # Docker + MySQL + Datos de prueba
-├── client-java/             # Backend Spring Boot + JTA + JPA + REST/SOAP
-├── frontend-react/          # Frontend React SPA moderno
+├── infra/                    # Docker + MySQL + Kafka + Proveedores
+├── client-java/             # Backend Spring Boot + JTA + JPA + REST/SOAP/gRPC + Kafka
+├── frontend-react/          # Frontend React SPA moderno con carrito
 ├── frontend-mpa/            # Frontend MPA para arquitectura de dos niveles
+├── proveedor-a-app/         # Microservicio Proveedor A (Tecnología)
+├── proveedor-b-app/         # Microservicio Proveedor B (Periféricos)
+├── proveedor-c-app/         # Microservicio Proveedor C (Otros)
 └── README.md
 ```
 
-## 🌐 Bases de Datos Distribuidas
+## 🌐 Bases de Datos Distribuidas y Kafka
 
-El sistema utiliza **tres bases de datos independientes** para separar los dominios de negocio:
+El sistema utiliza **cinco bases de datos independientes** más **Kafka** para separar los dominios de negocio y notificaciones:
 
 | Base | Contenedor | Puerto Host | Script Init | Objetivo |
 |------|------------|------------|-------------|----------|
 | **inventario** | mysql-inventario | 3306 | `inventario_init.sql` | Gestión de stock y artículos |
 | **facturacion** | mysql-facturacion | 3307 | `facturacion_init.sql` | Clientes, facturas y líneas |
 | **pagos** | mysql-pagos | 3308 | `pagos_init.sql` | Métodos y transacciones de pago |
+| **usuarios** | mysql-usuarios | 3309 | `usuarios_init.sql` | Datos de usuarios y clientes |
+| **productos** | mysql-productos | 3310 | `productos_init.sql` | Catálogo de productos |
+| **Kafka** | kafka + zookeeper | 9092 | - | Mensajería asíncrona |
 
 ### Características Técnicas:
 - **MySQL 8.4 LTS** con soporte XA para transacciones distribuidas
+- **Apache Kafka** con Zookeeper para notificaciones asíncronas
 - **JTA (Java Transaction API)** con Atomikos como transaction manager
 - **Two-Phase Commit** para garantizar consistencia ACID entre bases
 - **Configuración XA DataSource** separada para cada dominio
+- **3 Microservicios de Proveedores** con Kafka consumers
 
 ## 🚀 Instrucciones de Despliegue
 
 ### Prerrequisitos
-- **Java 21+** (OpenJDK recomendado)
+- **Java 17** (OpenJDK recomendado) - **IMPORTANTE: Usar Java 17, no Java 21**
 - **Node.js 18+** (para el frontend React)
-- **Docker y Docker Compose** (para las bases de datos)
+- **Docker y Docker Compose** (para las bases de datos y Kafka)
 - **Maven** (para el backend Java)
 
 ### 1. Configurar Java (macOS con Homebrew)
 ```bash
-export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home
+export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home
 export PATH=$JAVA_HOME/bin:$PATH
+java -version  # Debe mostrar OpenJDK 17.0.16
 ```
 
-### 2. Levantar las Bases de Datos Distribuidas
+### 2. Levantar la Infraestructura Completa (Bases de Datos + Kafka + Proveedores)
 ```bash
 cd infra
 docker compose up -d
 ```
 
-Credenciales (idénticas en los tres contenedores):
+**Esto levanta automáticamente:**
+- 5 bases de datos MySQL (puertos 3306-3310)
+- Kafka + Zookeeper (puerto 9092)
+- 3 microservicios de proveedores (proveedor-a, proveedor-b, proveedor-c)
+
+Credenciales (idénticas en todos los contenedores MySQL):
 - Usuario app: `equipo`
 - Contraseña: `123456`
 - Root: definido en `compose.yaml` (`MYSQL_ROOT_PASSWORD`)
@@ -62,11 +77,11 @@ Credenciales (idénticas en los tres contenedores):
 Cada script se ejecuta SOLO la primera vez (volumen vacío). Para re-ejecutar, elimina los volúmenes:
 ```bash
 docker compose down
-docker volume rm $(docker volume ls -q | grep -E "inventario|facturacion|pagos")
+docker volume rm $(docker volume ls -q | grep -E "inventario|facturacion|pagos|usuarios|productos")
 docker compose up -d
 ```
 
-### 3. Ejecutar el Backend
+### 3. Ejecutar el Backend Principal
 #### Windows (PowerShell)
 ```powershell
 cd client-java
@@ -76,10 +91,12 @@ mvn spring-boot:run
 #### macOS / Linux (bash/zsh)
 ```bash
 cd client-java
-export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home
+export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home
 export PATH=$JAVA_HOME/bin:$PATH
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
+
+**IMPORTANTE:** Usar `./mvnw` (Maven Wrapper) en lugar de `mvn` para evitar problemas de versión.
 
 ### 4. Ejecutar el Frontend SPA (React)
 ```bash
@@ -119,9 +136,12 @@ xdg-open frontend-mpa/index.html # Linux
 - **Frontend MPA (Arquitectura 2 niveles)**: http://localhost:3001
 - **Backend API REST**: http://localhost:8080/api
 - **Backend SOAP**: http://localhost:8080/ws
+- **Kafka**: localhost:9092
 - **BD Inventario**: localhost:3306 (db: inventario)
 - **BD Facturación**: localhost:3307 (db: facturacion)
 - **BD Pagos**: localhost:3308 (db: pagos)
+- **BD Usuarios**: localhost:3309 (db: usuarios)
+- **BD Productos**: localhost:3310 (db: productos)
 
 ### URLs Específicas del Frontend MPA:
 - **Dashboard Principal**: http://localhost:3001/
@@ -130,7 +150,62 @@ xdg-open frontend-mpa/index.html # Linux
 - **Organizaciones**: http://localhost:3001/src/pages/organizations.html
 - **Categorías**: http://localhost:3001/src/pages/categories.html
 
-## 🌐 **Endpoints para Frontend**
+## 🚀 Sistema de Notificaciones Kafka
+
+### **Arquitectura Kafka Implementada:**
+
+El sistema incluye un **sistema completo de notificaciones asíncronas** usando Apache Kafka:
+
+#### **Topics Kafka:**
+- `ventas-proveedor-a` - Notificaciones para Proveedor A (Tecnología)
+- `ventas-proveedor-b` - Notificaciones para Proveedor B (Periféricos)  
+- `ventas-proveedor-c` - Notificaciones para Proveedor C (Otros)
+- `notificaciones-clientes` - Notificaciones para clientes (pendiente implementar)
+
+#### **Enrutamiento Inteligente:**
+El sistema determina automáticamente qué proveedor maneja cada producto:
+- **Proveedor A**: SKUs que empiezan con `LAPTOP`, `PC`
+- **Proveedor B**: SKUs que empiezan con `MOUSE`, `TECLADO`
+- **Proveedor C**: Todos los demás SKUs
+
+#### **Flujo de Notificaciones:**
+1. **Frontend** → Checkout → **Backend**
+2. **Backend** → Procesa venta con JTA → **Kafka Producer**
+3. **Kafka Producer** → Envía mensaje al proveedor específico
+4. **Proveedor** → Recibe mensaje → Actualiza inventario → Envía notificación
+
+### **Verificar Sistema Kafka:**
+```bash
+# Ver logs de proveedores
+docker logs proveedor-a --tail 5
+docker logs proveedor-b --tail 5  
+docker logs proveedor-c --tail 5
+
+# Verificar topics Kafka
+docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+```
+
+### **Testing del Sistema:**
+```bash
+# Probar venta que va al Proveedor A
+curl -X POST http://localhost:8080/api/checkout \
+  -H "Content-Type: application/json" \
+  -d '{"items": [{"sku": "LAPTOP001", "cantidad": 1}], "clienteId": 1, "metodoPago": "TARJETA"}'
+
+# Probar venta que va al Proveedor B  
+curl -X POST http://localhost:8080/api/checkout \
+  -H "Content-Type: application/json" \
+  -d '{"items": [{"sku": "MOUSE001", "cantidad": 1}], "clienteId": 2, "metodoPago": "PAYPAL"}'
+
+# Probar venta que va al Proveedor C
+curl -X POST http://localhost:8080/api/checkout \
+  -H "Content-Type: application/json" \
+  -d '{"items": [{"sku": "MONITOR001", "cantidad": 1}], "clienteId": 3, "metodoPago": "TARJETA"}'
+```
+
+**Resultado esperado:** Solo el proveedor correspondiente debe recibir y procesar cada mensaje.
+
+---
 
 ### **Endpoints REST (Puerto 8080)**
 
@@ -365,26 +440,43 @@ docker compose down -v
 pkill -f "java.*client-java" || true
 pkill -f "vite" || true
 
-# 2. Levantar base de datos (con datos automáticos)
+# 2. Levantar infraestructura completa (BDs + Kafka + Proveedores)
 cd infra && docker compose up -d
 
-# 3. Backend
-cd ../client-java && export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home && export PATH=$JAVA_HOME/bin:$PATH && mvn spring-boot:run &
+# 3. Backend principal
+cd ../client-java && export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home && export PATH=$JAVA_HOME/bin:$PATH && ./mvnw spring-boot:run &
 
-# 4. Frontend
+# 4. Frontend React
 cd ../frontend-react && npm run dev &
 ```
 
 ### Solo reiniciar backend:
 ```bash
 pkill -f "java.*client-java" || true
-cd client-java && export JAVA_HOME=$(/opt/homebrew/bin/brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home && export PATH=$JAVA_HOME/bin:$PATH && mvn spring-boot:run
+cd client-java && export JAVA_HOME=/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home && export PATH=$JAVA_HOME/bin:$PATH && ./mvnw spring-boot:run
 ```
 
 ### Solo reiniciar frontend:
 ```bash
 pkill -f "vite" || true
 cd frontend-react && npm run dev
+```
+
+### Verificar estado del sistema:
+```bash
+# Verificar contenedores
+docker ps
+
+# Verificar logs de proveedores
+docker logs proveedor-a --tail 3
+docker logs proveedor-b --tail 3
+docker logs proveedor-c --tail 3
+
+# Verificar backend
+curl http://localhost:8080/actuator/health
+
+# Verificar Kafka
+docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 ```
 
 ## 🔄 Transacciones Distribuidas con JTA 
@@ -657,12 +749,32 @@ curl -X POST http://localhost:8080/api/products \
 
 | Punto | Estado | Descripción |
 |-------|--------|-------------|
-| 1 | ✅ | Base de datos con Docker |
-| 2 | ✅ | Cliente Java con JPA |
-| 3 | ✅ | Aplicación Web SPA |
-| 4 | ✅ | Arquitectura de dos niveles (MPA + REST/SOAP) |
+| 1 | ✅ | Bases de datos distribuidas con Docker (5 MySQL + Kafka) |
+| 2 | ✅ | Cliente Java con JPA, JTA y Kafka |
+| 3 | ✅ | Aplicación Web SPA con carrito y checkout |
+| 4 | ✅ | Arquitectura de dos niveles (MPA + REST/SOAP/gRPC) |
+| 5 | ✅ | Sistema de notificaciones Kafka con 3 proveedores |
+
+### **Sistema Kafka - Estado Actual:**
+- ✅ **Kafka Cluster** funcionando (puerto 9092)
+- ✅ **4 Topics** creados automáticamente
+- ✅ **Kafka Producer** en backend funcionando
+- ✅ **3 Kafka Consumers** en proveedores funcionando
+- ✅ **Enrutamiento inteligente** por SKU funcionando
+- ✅ **MDB (Message-Driven Beans)** implementados
+- ⚠️ **Consumer de emails** para clientes (pendiente implementar)
 
 ## 🆕 Mejoras Recientes
+
+### **Sistema Kafka (Nuevo)**
+- ✅ **Apache Kafka** integrado con Zookeeper
+- ✅ **4 Topics Kafka** creados automáticamente
+- ✅ **Kafka Producer** en backend para notificaciones
+- ✅ **3 Microservicios de Proveedores** con Kafka consumers
+- ✅ **Enrutamiento inteligente** por SKU de productos
+- ✅ **MDB (Message-Driven Beans)** implementados
+- ✅ **Sistema de notificaciones** funcionando completamente
+- ✅ **Testing del enrutamiento** confirmado
 
 ### **Frontend SPA (React)**
 - ✅ **Carrito de compras** completamente funcional
@@ -678,16 +790,20 @@ curl -X POST http://localhost:8080/api/products \
 - ✅ **Checkout funcional** usando servicios locales en lugar de gRPC externos
 - ✅ **XSD Schema actualizado** para incluir métodos de pago
 - ✅ **CORS configurado** para todos los endpoints SOAP
+- ✅ **Kafka Producer** implementado para notificaciones
+- ✅ **JTA con Atomikos** funcionando correctamente
 
 ### **Integración**
 - ✅ **Flujo completo de compra** desde catálogo hasta confirmación
 - ✅ **Datos de usuario** obtenidos via SOAP automáticamente
 - ✅ **Métodos de pago** obtenidos via SOAP y mostrados en checkout
 - ✅ **Procesamiento de compra** funcional con respuesta completa
+- ✅ **Notificaciones Kafka** funcionando con enrutamiento correcto
+- ✅ **Sistema distribuido** con 5 bases de datos + Kafka
 
 ## 🔍 Estructura de la Base de Datos
 
-Ahora la capa de datos está distribuida en tres dominios independientes para favorecer separación de responsabilidades y facilitar escalado horizontal futuro:
+Ahora la capa de datos está distribuida en **cinco dominios independientes** más **Kafka** para favorecer separación de responsabilidades y facilitar escalado horizontal futuro:
 
 ### Base `inventario` (Puerto 3306)
 - `categorias(id, nombre, descripcion)`
@@ -702,21 +818,43 @@ Ahora la capa de datos está distribuida en tres dominios independientes para fa
 - `metodos_pago(id, codigo, descripcion)`
 - `pagos(id, referencia, fecha, importe, moneda, metodo_id, estado)`
 
-La base original usada por el backend (productos / organizations / categories) puede migrarse gradualmente a este esquema distribuido según evolución del proyecto.
+### Base `usuarios` (Puerto 3309)
+- `usuarios(id, nombre, email, telefono, direccion)`
+- `datos_personales(id, usuario_id, fecha_nacimiento, genero)`
+- `datos_financieros(id, usuario_id, ingresos_mensuales, limite_credito)`
+
+### Base `productos` (Puerto 3310)
+- `products(id, name, description, price, stock)`
+- `organizations(id, name, description)`
+- `categories(id, name, description)`
+
+### **Sistema Kafka (Puerto 9092)**
+- **Topics**: `ventas-proveedor-a`, `ventas-proveedor-b`, `ventas-proveedor-c`, `notificaciones-clientes`
+- **Producers**: Backend principal
+- **Consumers**: 3 microservicios de proveedores
 
 ## 📝 Notas Técnicas
 
-- **Backend**: Puerto 8080 (REST + SOAP)
+- **Backend**: Puerto 8080 (REST + SOAP + Kafka Producer)
 - **Frontend SPA**: Puerto 3000 (o disponible)
 - **Frontend MPA**: Puerto 3001 (servidor Python) o archivos HTML estáticos
+- **Kafka**: Puerto 9092 (mensajería asíncrona)
 - **Bases de datos**:
    - Inventario: 3306 (schema: inventario)
    - Facturación: 3307 (schema: facturacion)
    - Pagos: 3308 (schema: pagos)
+   - Usuarios: 3309 (schema: usuarios)
+   - Productos: 3310 (schema: productos)
+- **Microservicios de Proveedores**: 
+   - Proveedor A: Puerto 8081 (Tecnología)
+   - Proveedor B: Puerto 8082 (Periféricos)
+   - Proveedor C: Puerto 8083 (Otros)
 - **Proxy**: Configurado en Vite para evitar CORS
 - **Persistencia**: Garantizada con volúmenes de Docker
 - **Datos iniciales**:
    - inventario: 3 categorías, 4 ítems
    - facturacion: 2 clientes, 2 facturas, 3 líneas
    - pagos: 3 métodos, 3 transacciones
-- **Arquitectura**: Dos niveles - MPA consume servicios REST/SOAP del backend; datos preparados para futura separación de microservicios
+   - usuarios: 5 usuarios con datos completos
+   - productos: Catálogo completo de productos
+- **Arquitectura**: Microservicios con Kafka - MPA consume servicios REST/SOAP del backend; datos preparados para escalado horizontal

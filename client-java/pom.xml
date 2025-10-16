@@ -120,6 +120,12 @@
       <version>1.3.2</version>
     </dependency>
 
+    <!-- Apache Kafka -->
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+
     <!-- Test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

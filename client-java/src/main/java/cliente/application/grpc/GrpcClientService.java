@@ -2,6 +2,7 @@ package cliente.application.grpc;
 
 import cliente.application.dto.CheckoutRequest;
 import cliente.application.dto.CheckoutResponse;
+import cliente.application.services.CheckoutCoordinatorService;
 import cliente.application.services.PurchaseServiceImpl;
 import cliente.application.services.usuarios.UsuarioService;
 import cliente.application.models.usuarios.Usuario;
@@ -27,6 +28,7 @@ public class GrpcClientService {
     
     private final PurchaseServiceImpl purchaseService;
     private final UsuarioService userService;
+    private final CheckoutCoordinatorService checkoutCoordinatorService;
     
     /**
      * Obtiene un usuario aleatorio usando el servicio local
@@ -68,30 +70,30 @@ public class GrpcClientService {
     }
     
     /**
-     * Procesa una compra usando el servicio local
+     * Procesa una compra usando el CheckoutCoordinatorService (con Kafka)
      */
     public CheckoutResponse processPurchase(CheckoutRequest request) {
         log.info("Local Service: Procesando compra - Cliente: {} - Items: {}", 
                 request.getClienteId(), request.getItems().size());
         
         try {
-            // Validación simple de stock
-            for (CheckoutRequest.CheckoutItem item : request.getItems()) {
-                if (item.getCantidad() <= 0) {
-                    throw new RuntimeException("Cantidad inválida para SKU: " + item.getSku());
-                }
-                if (item.getCantidad() > 100) {
-                    throw new RuntimeException("Stock insuficiente para " + item.getSku());
-                }
-            }
-            
-            // Procesar items
+            // Procesar cada item usando CheckoutCoordinatorService
             List<CheckoutResponse.CheckoutItemResponse> itemsResponse = new ArrayList<>();
             double total = 0.0;
+            
             for (CheckoutRequest.CheckoutItem item : request.getItems()) {
+                // Usar CheckoutCoordinatorService para procesar cada item
+                String resultado = checkoutCoordinatorService.procesarVentaDemo(
+                    item.getSku(), 
+                    item.getCantidad(), 
+                    request.getClienteId(), 
+                    request.getMetodoPago() != null ? request.getMetodoPago() : "TARJETA"
+                );
+                
                 double precioUnitario = 100.0; // Precio ejemplo
                 double subtotal = precioUnitario * item.getCantidad();
                 total += subtotal;
+                
                 itemsResponse.add(CheckoutResponse.CheckoutItemResponse.builder()
                     .sku(item.getSku())
                     .nombre("Producto " + item.getSku())
