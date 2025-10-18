@@ -40,13 +40,13 @@ if __name__ == "__main__":
 
     # Crear el servidor
     with socketserver.TCPServer(("", PORT), CustomHTTPRequestHandler) as httpd:
-        print(f"🚀 Servidor MPA ejecutándose en http://localhost:{PORT}")
-        print(f"📁 Directorio: {os.getcwd()}")
-        print(f"🌐 Abre http://localhost:{PORT} en tu navegador")
+        print(f"Servidor MPA ejecutandose en http://localhost:{PORT}")
+        print(f"Directorio: {os.getcwd()}")
+        print(f"Abre http://localhost:{PORT} en tu navegador")
         print("Presiona Ctrl+C para detener el servidor")
         
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n👋 Servidor detenido")
+            print("\nServidor detenido")
             httpd.shutdown()

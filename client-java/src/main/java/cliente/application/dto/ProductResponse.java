@@ -22,5 +22,6 @@ public class ProductResponse {
     private Integer stock;
     private BigDecimal precio;
     private String categoria;
+    private String organizacion;
     private String descripcion;
 }

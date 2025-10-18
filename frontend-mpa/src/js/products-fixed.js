@@ -1,4 +1,4 @@
-// Funcionalidad específica para la página de productos (REST)
+// Funcionalidad específica para la página de productos (REST) - VERSIÓN CORREGIDA
 
 let allProducts = [];
 let allOrganizations = [];
@@ -96,7 +96,7 @@ function renderProducts(products) {
 
     console.log('Renderizando', products.length, 'productos...');
     grid.innerHTML = products.map(product => `
-        <div class="product-card">
+        <div class="product-card" onclick="selectProduct(${product.id})" style="cursor: pointer;">
             <div class="card-header">
                 <h3 class="card-title">${escapeHtml(product.nombre || product.name)}</h3>
                 <span class="card-id">#${product.id}</span>
@@ -105,7 +105,14 @@ function renderProducts(products) {
                 <div class="card-meta">
                     <p><strong>Organización:</strong> ${escapeHtml(product.organizacion || product.organization?.name || 'N/A')}</p>
                     <p><strong>Categoría:</strong> ${escapeHtml(product.categoria || product.category?.name || 'N/A')}</p>
+                    <p><strong>Precio:</strong> $${product.precio || 'N/A'}</p>
+                    <p><strong>Stock:</strong> ${product.stock || 'N/A'}</p>
                     ${product.descripcion ? `<p><strong>Descripción:</strong> ${escapeHtml(product.descripcion)}</p>` : ''}
+                </div>
+                <div class="card-actions">
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); selectProduct(${product.id})">
+                        <i class="fas fa-shopping-cart"></i> Comprar
+                    </button>
                 </div>
             </div>
         </div>
@@ -116,19 +123,27 @@ function renderProducts(products) {
 
 // Poblar select de organizaciones (no se usa en el formulario actual)
 function populateOrganizationSelect() {
+    console.log('=== populateOrganizationSelect ejecutado ===');
     // No se necesita para el formulario actual
     return;
 }
 
 // Poblar select de categorías
 function populateCategorySelect() {
+    console.log('=== populateCategorySelect iniciado ===');
     const select = document.getElementById('productCategory');
-    if (!select) return;
+    console.log('Elemento productCategory encontrado:', select ? 'SÍ' : 'NO');
+    
+    if (!select) {
+        console.log('Elemento productCategory no encontrado, saltando...');
+        return;
+    }
 
     select.innerHTML = '<option value="">Seleccionar categoría...</option>' +
         allCategories.map(cat => 
             `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`
         ).join('');
+    console.log('=== populateCategorySelect completado ===');
 }
 
 // Inicializar búsqueda
@@ -202,18 +217,14 @@ function initCreateProductForm() {
     }
 }
 
-// Mostrar modal de creación
+// Mostrar modal de creación de producto
 function showCreateProductModal() {
     Modal.show('createProductModal');
 }
 
-// Cerrar modal de creación
+// Cerrar modal de creación de producto
 function closeCreateProductModal() {
     Modal.hide('createProductModal');
-    const form = document.getElementById('createProductForm');
-    if (form) {
-        form.reset();
-    }
 }
 
 // Función para escapar HTML
@@ -231,4 +242,133 @@ function formatDate(dateString) {
         month: 'long',
         day: 'numeric'
     });
+}
+
+// Variables para el flujo de compra
+let selectedProduct = null;
+
+// Seleccionar producto para compra
+function selectProduct(productId) {
+    console.log('=== selectProduct iniciado ===');
+    console.log('Producto seleccionado ID:', productId);
+    
+    selectedProduct = allProducts.find(p => p.id === productId);
+    if (!selectedProduct) {
+        console.error('Producto no encontrado con ID:', productId);
+        Notification.show('Producto no encontrado', 'error');
+        return;
+    }
+    
+    console.log('Producto encontrado:', selectedProduct);
+    showPurchaseModal();
+}
+
+// Mostrar modal de compra
+function showPurchaseModal() {
+    console.log('=== showPurchaseModal iniciado ===');
+    
+    if (!selectedProduct) {
+        console.error('No hay producto seleccionado');
+        return;
+    }
+    
+    // Actualizar la información del producto en el modal
+    const productInfo = document.getElementById('selectedProductInfo');
+    if (productInfo) {
+        productInfo.innerHTML = `
+            <div class="selected-product">
+                <h4>${escapeHtml(selectedProduct.nombre || selectedProduct.name)}</h4>
+                <p><strong>SKU:</strong> ${selectedProduct.sku}</p>
+                <p><strong>Precio:</strong> $${selectedProduct.precio}</p>
+                <p><strong>Stock disponible:</strong> ${selectedProduct.stock}</p>
+                <p><strong>Categoría:</strong> ${selectedProduct.categoria}</p>
+            </div>
+        `;
+    }
+    
+    // Limpiar el formulario
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerEmail').value = '';
+    document.getElementById('quantity').value = '1';
+    document.getElementById('quantity').max = selectedProduct.stock;
+    
+    Modal.show('purchaseModal');
+}
+
+// Cerrar modal de compra
+function closePurchaseModal() {
+    console.log('=== closePurchaseModal iniciado ===');
+    Modal.hide('purchaseModal');
+    selectedProduct = null;
+}
+
+// Procesar compra
+async function processPurchase() {
+    console.log('=== processPurchase iniciado ===');
+    
+    if (!selectedProduct) {
+        console.error('No hay producto seleccionado');
+        Notification.show('No hay producto seleccionado', 'error');
+        return;
+    }
+    
+    const customerEmail = document.getElementById('customerEmail').value;
+    const customerName = document.getElementById('customerName').value;
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    
+    if (!customerEmail || !customerName) {
+        Notification.show('Por favor completa todos los campos', 'error');
+        return;
+    }
+    
+    if (quantity > selectedProduct.stock) {
+        Notification.show('No hay suficiente stock disponible', 'error');
+        return;
+    }
+    
+    try {
+        console.log('Procesando compra...');
+        console.log('Producto:', selectedProduct);
+        console.log('Cliente:', customerName, customerEmail);
+        console.log('Cantidad:', quantity);
+        
+        // Crear la orden de compra
+        const orderData = {
+            productId: selectedProduct.id,
+            customerName: customerName,
+            customerEmail: customerEmail,
+            quantity: quantity,
+            totalPrice: selectedProduct.precio * quantity
+        };
+        
+        console.log('Datos de la orden:', orderData);
+        
+        // Usar fetch directamente para evitar problemas con RestService
+        console.log('Enviando datos al backend:', orderData);
+        
+        const response = await fetch('http://localhost:8080/api/checkout/simple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Respuesta del checkout:', result);
+        
+        Notification.show('¡Compra procesada exitosamente! Revisa tu email.', 'success');
+        closePurchaseModal();
+        
+        // Recargar productos para actualizar stock
+        loadProducts();
+        
+    } catch (error) {
+        console.error('Error procesando compra:', error);
+        Notification.show('Error procesando la compra: ' + error.message, 'error');
+    }
 }

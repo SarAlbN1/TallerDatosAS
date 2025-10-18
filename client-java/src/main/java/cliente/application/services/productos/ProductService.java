@@ -23,6 +23,11 @@ public class ProductService {
     return repo.findAll();
   }
 
+  @Transactional(readOnly = true)
+  public java.util.Optional<Product> findById(Long id) {
+    return repo.findById(id);
+  }
+
   @Transactional
   public Product create(Product p) {
     return repo.save(p);

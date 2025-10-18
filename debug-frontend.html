@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend</title>
+    <style>
+        .debug { margin: 10px; padding: 10px; border: 1px solid #ccc; }
+        .error { background-color: #ffebee; border-color: #f44336; }
+        .success { background-color: #e8f5e8; border-color: #4caf50; }
+        .info { background-color: #e3f2fd; border-color: #2196f3; }
+    </style>
+</head>
+<body>
+    <h1>Debug Frontend - TallerDatosAS</h1>
+    <div id="debug-log"></div>
+    <div id="productsGrid"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debug-log');
+            const div = document.createElement('div');
+            div.className = `debug ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logDiv.appendChild(div);
+            console.log(message);
+        }
+
+        // Verificar configuración
+        log('Iniciando debug del frontend...', 'info');
+        
+        // Simular la configuración
+        const API_BASE_URL = 'http://localhost:8080/api';
+        log(`API_BASE_URL configurado: ${API_BASE_URL}`, 'info');
+
+        // Verificar si fetch está disponible
+        if (typeof fetch === 'undefined') {
+            log('ERROR: fetch no está disponible', 'error');
+        } else {
+            log('fetch está disponible', 'success');
+        }
+
+        // Función de prueba de conectividad
+        async function testConnectivity() {
+            try {
+                log('Probando conectividad con el backend...', 'info');
+                const response = await fetch(`${API_BASE_URL}/products`);
+                log(`Respuesta del backend: ${response.status} ${response.statusText}`, 'success');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Datos recibidos: ${data.length} productos`, 'success');
+                    log(`Primer producto: ${JSON.stringify(data[0])}`, 'info');
+                    return data;
+                } else {
+                    log(`Error en la respuesta: ${response.status}`, 'error');
+                    return null;
+                }
+            } catch (error) {
+                log(`Error de conectividad: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // Función de renderizado simplificada
+        function renderProducts(products) {
+            log(`Renderizando ${products.length} productos...`, 'info');
+            const grid = document.getElementById('productsGrid');
+            
+            if (!grid) {
+                log('ERROR: Elemento productsGrid no encontrado', 'error');
+                return;
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p>No hay productos</p>';
+                log('No hay productos para mostrar', 'info');
+                return;
+            }
+
+            grid.innerHTML = products.map(product => `
+                <div style="border: 1px solid #ddd; margin: 10px; padding: 15px; border-radius: 5px;">
+                    <h3>${product.nombre || product.name || 'Sin nombre'}</h3>
+                    <p><strong>ID:</strong> ${product.id}</p>
+                    <p><strong>SKU:</strong> ${product.sku || 'N/A'}</p>
+                    <p><strong>Stock:</strong> ${product.stock || 'N/A'}</p>
+                    <p><strong>Organización:</strong> ${product.organizacion || 'N/A'}</p>
+                    <p><strong>Categoría:</strong> ${product.categoria || 'N/A'}</p>
+                    <p><strong>Descripción:</strong> ${product.descripcion || 'N/A'}</p>
+                </div>
+            `).join('');
+            
+            log('Productos renderizados exitosamente', 'success');
+        }
+
+        // Función principal de prueba
+        async function runTest() {
+            log('=== INICIANDO PRUEBA COMPLETA ===', 'info');
+            
+            // Paso 1: Verificar conectividad
+            const products = await testConnectivity();
+            
+            if (products) {
+                // Paso 2: Renderizar productos
+                renderProducts(products);
+                log('=== PRUEBA COMPLETADA EXITOSAMENTE ===', 'success');
+            } else {
+                log('=== PRUEBA FALLÓ ===', 'error');
+            }
+        }
+
+        // Ejecutar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            log('DOM cargado, iniciando prueba...', 'info');
+            runTest();
+        });
+    </script>
+</body>
+</html>

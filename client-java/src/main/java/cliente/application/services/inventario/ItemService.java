@@ -39,6 +39,9 @@ public class ItemService {
   public Item saveItem(Item item) { return itemRepository.save(item); }
 
   @Transactional(transactionManager = "jtaTransactionManager")
+  public Item createItem(Item item) { return itemRepository.save(item); }
+
+  @Transactional(transactionManager = "jtaTransactionManager")
   public Item updateItem(Long id, Item item) {
     if (!itemRepository.existsById(id)) throw new IllegalArgumentException("Item con ID " + id + " no existe");
     item.setId(id);

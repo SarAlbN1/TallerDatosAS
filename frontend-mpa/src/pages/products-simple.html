@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Simple - TallerDatosAS MPA</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .product-card { border: 1px solid #ddd; margin: 10px; padding: 15px; border-radius: 5px; }
+        .loading { text-align: center; padding: 20px; }
+        .error { background-color: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Productos - Versión Simple</h1>
+    
+    <div class="loading" id="loading">
+        <p>Cargando productos...</p>
+    </div>
+
+    <div class="error" id="error" style="display: none;">
+        <p id="errorMessage"></p>
+    </div>
+
+    <div id="productsGrid">
+        <!-- Los productos se cargarán aquí -->
+    </div>
+
+    <script>
+        // Configuración simple
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Función simple para cargar productos
+        async function loadProducts() {
+            try {
+                console.log('Cargando productos...');
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                const response = await fetch(`${API_BASE_URL}/products`);
+                console.log('Respuesta:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const products = await response.json();
+                console.log('Productos recibidos:', products);
+                
+                renderProducts(products);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Función simple para renderizar productos
+        function renderProducts(products) {
+            console.log('Renderizando productos:', products);
+            const grid = document.getElementById('productsGrid');
+            
+            if (!grid) {
+                console.error('Elemento productsGrid no encontrado');
+                return;
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p>No hay productos</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <h3>${product.nombre || product.name || 'Sin nombre'}</h3>
+                    <p><strong>ID:</strong> ${product.id}</p>
+                    <p><strong>SKU:</strong> ${product.sku || 'N/A'}</p>
+                    <p><strong>Stock:</strong> ${product.stock || 'N/A'}</p>
+                    <p><strong>Organización:</strong> ${product.organizacion || 'N/A'}</p>
+                    <p><strong>Categoría:</strong> ${product.categoria || 'N/A'}</p>
+                    <p><strong>Descripción:</strong> ${product.descripcion || 'N/A'}</p>
+                </div>
+            `).join('');
+            
+            console.log('Productos renderizados exitosamente');
+        }
+
+        // Cargar productos cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM cargado, iniciando carga de productos...');
+            loadProducts();
+        });
+    </script>
+</body>
+</html>

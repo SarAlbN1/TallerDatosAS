@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Debug - TallerDatosAS MPA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-database"></i>
+                <span>TallerDatosAS</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1><i class="fas fa-box"></i> Productos - Debug</h1>
+                <p>Versión de debug para identificar problemas</p>
+            </header>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando productos...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script src="../../config.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // Script de debug inline
+        console.log('=== DEBUG SCRIPT INICIADO ===');
+        
+        // Verificar si CONFIG está disponible
+        if (typeof CONFIG === 'undefined') {
+            console.error('CONFIG no está definido');
+        } else {
+            console.log('CONFIG disponible:', CONFIG);
+        }
+
+        // Verificar si Utils está disponible
+        if (typeof Utils === 'undefined') {
+            console.error('Utils no está definido');
+        } else {
+            console.log('Utils disponible:', Utils);
+        }
+
+        // Verificar si RestService está disponible
+        if (typeof RestService === 'undefined') {
+            console.error('RestService no está definido');
+        } else {
+            console.log('RestService disponible:', RestService);
+        }
+
+        // Función de debug simplificada
+        async function debugLoadProducts() {
+            try {
+                console.log('Iniciando carga de productos...');
+                
+                // Mostrar loading
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                // Verificar API_BASE_URL
+                const apiUrl = CONFIG.API_BASE_URL + '/products';
+                console.log('URL de la API:', apiUrl);
+                
+                // Hacer la petición
+                const products = await RestService.getProducts();
+                console.log('Productos recibidos:', products);
+                
+                // Renderizar productos
+                renderProductsDebug(products);
+                
+            } catch (error) {
+                console.error('Error en debugLoadProducts:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Función de renderizado simplificada
+        function renderProductsDebug(products) {
+            console.log('Renderizando productos:', products);
+            const grid = document.getElementById('productsGrid');
+            
+            if (!grid) {
+                console.error('Elemento productsGrid no encontrado');
+                return;
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p>No hay productos</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map(product => `
+                <div class="product-card" style="border: 1px solid #ddd; margin: 10px; padding: 15px;">
+                    <h3>${product.nombre || product.name || 'Sin nombre'}</h3>
+                    <p><strong>ID:</strong> ${product.id}</p>
+                    <p><strong>SKU:</strong> ${product.sku || 'N/A'}</p>
+                    <p><strong>Stock:</strong> ${product.stock || 'N/A'}</p>
+                    <p><strong>Organización:</strong> ${product.organizacion || 'N/A'}</p>
+                    <p><strong>Categoría:</strong> ${product.categoria || 'N/A'}</p>
+                </div>
+            `).join('');
+            
+            console.log('Productos renderizados exitosamente');
+        }
+
+        // Ejecutar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM cargado, iniciando debug...');
+            debugLoadProducts();
+        });
+    </script>
+</body>
+</html>

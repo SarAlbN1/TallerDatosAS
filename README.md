@@ -1,12 +1,13 @@
-# TallerDatosAS - Sistema Distribuido con Transacciones JTA y Kafka
+# TallerDatosAS - Sistema Distribuido con Transacciones JTA, Kafka y Notificaciones por Email
 
-Este proyecto implementa un sistema completo de gestión de productos con arquitectura distribuida, transacciones ACID y notificaciones asíncronas con Kafka, cumpliendo todos los requisitos del taller:
+Este proyecto implementa un sistema completo de gestión de productos con arquitectura distribuida, transacciones ACID, notificaciones asíncronas con Kafka y sistema de notificaciones por email, cumpliendo todos los requisitos del taller:
 
 - **Punto 1**: Bases de datos distribuidas con Docker (5 instancias MySQL + Kafka)
 - **Punto 2**: Cliente pesado Java con JPA, JTA y Kafka (Java Transaction API)
 - **Punto 3**: Aplicación Web SPA (React) con carrito y checkout
 - **Punto 4**: Arquitectura de dos niveles con servicios REST/SOAP/gRPC
 - **Punto 5**: Sistema de notificaciones Kafka con proveedores distribuidos
+- **Punto 6**: Sistema de notificaciones por email con Mailtrap
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -150,7 +151,7 @@ xdg-open frontend-mpa/index.html # Linux
 - **Organizaciones**: http://localhost:3001/src/pages/organizations.html
 - **Categorías**: http://localhost:3001/src/pages/categories.html
 
-## 🚀 Sistema de Notificaciones Kafka
+## 🚀 Sistema de Notificaciones Kafka y Email
 
 ### **Arquitectura Kafka Implementada:**
 
@@ -160,7 +161,7 @@ El sistema incluye un **sistema completo de notificaciones asíncronas** usando 
 - `ventas-proveedor-a` - Notificaciones para Proveedor A (Tecnología)
 - `ventas-proveedor-b` - Notificaciones para Proveedor B (Periféricos)  
 - `ventas-proveedor-c` - Notificaciones para Proveedor C (Otros)
-- `notificaciones-clientes` - Notificaciones para clientes (pendiente implementar)
+- `notificaciones-clientes` - Notificaciones para clientes (✅ **IMPLEMENTADO**)
 
 #### **Enrutamiento Inteligente:**
 El sistema determina automáticamente qué proveedor maneja cada producto:
@@ -173,6 +174,9 @@ El sistema determina automáticamente qué proveedor maneja cada producto:
 2. **Backend** → Procesa venta con JTA → **Kafka Producer**
 3. **Kafka Producer** → Envía mensaje al proveedor específico
 4. **Proveedor** → Recibe mensaje → Actualiza inventario → Envía notificación
+5. **Kafka Producer** → Envía evento a `notificaciones-clientes`
+6. **Email Service** → Consume evento → Envía email de confirmación al cliente
+7. **Email Service** → Envía notificación al administrador
 
 ### **Verificar Sistema Kafka:**
 ```bash
@@ -201,9 +205,110 @@ curl -X POST http://localhost:8080/api/checkout \
 curl -X POST http://localhost:8080/api/checkout \
   -H "Content-Type: application/json" \
   -d '{"items": [{"sku": "MONITOR001", "cantidad": 1}], "clienteId": 3, "metodoPago": "TARJETA"}'
+
+# Probar checkout simple con notificaciones por email
+curl -X POST http://localhost:8080/api/checkout/simple \
+  -H "Content-Type: application/json" \
+  -d '{"productId": 1, "customerName": "Alejandro Test", "customerEmail": "alejandro09pf3@gmail.com", "quantity": 1, "totalPrice": 100.0}'
 ```
 
-**Resultado esperado:** Solo el proveedor correspondiente debe recibir y procesar cada mensaje.
+**Resultado esperado:** 
+- Solo el proveedor correspondiente debe recibir y procesar cada mensaje
+- Los emails se envían automáticamente a Mailtrap para testing
+
+## 📧 Sistema de Notificaciones por Email
+
+### **Configuración de Email**
+
+El sistema utiliza **Mailtrap** para testing de emails en desarrollo:
+
+#### **Credenciales Mailtrap:**
+- **Host**: sandbox.smtp.mailtrap.io
+- **Puerto**: 2525
+- **Usuario**: 19aa0f3606c7fc
+- **Contraseña**: cfc52f63310f7b
+- **Autenticación**: PLAIN, LOGIN, CRAM-MD5
+- **TLS**: Opcional (STARTTLS en todos los puertos)
+
+#### **Configuración en application.properties:**
+```properties
+# Email Configuration (Mailtrap for testing)
+spring.mail.host=sandbox.smtp.mailtrap.io
+spring.mail.port=2525
+spring.mail.username=${EMAIL_USERNAME:19aa0f3606c7fc}
+spring.mail.password=${EMAIL_PASSWORD:cfc52f63310f7b}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.ssl.trust=sandbox.smtp.mailtrap.io
+
+# Email Templates
+email.from=noreply@tallerdatosas.com
+email.from.name=TallerDatosAS
+```
+
+### **Flujo de Notificaciones por Email**
+
+1. **Usuario completa compra** en el frontend
+2. **Backend procesa checkout** y crea evento de venta
+3. **Kafka Producer** envía evento a topic `notificaciones-clientes`
+4. **EmailNotificationMDB** consume el evento
+5. **EmailService** envía dos emails:
+   - **Email de confirmación** al cliente
+   - **Email de notificación** al administrador
+
+### **Templates de Email**
+
+#### **Confirmación de Compra (Cliente)**
+- **Template**: `templates/email/confirmacion-compra.html`
+- **Contenido**: Detalles de la compra, información del producto, total
+- **Diseño**: HTML responsive con estilos modernos
+
+#### **Notificación de Nueva Venta (Admin)**
+- **Template**: `templates/email/notificacion-admin.html`
+- **Contenido**: Resumen de la venta, datos del cliente, productos
+- **Diseño**: HTML responsive para administradores
+
+### **Verificar Emails en Mailtrap**
+
+1. **Acceder a Mailtrap**: https://mailtrap.io/
+2. **Iniciar sesión** con tu cuenta
+3. **Ir a "Inbox de Testing"**
+4. **Ver emails enviados** por el sistema
+5. **Hacer clic en cualquier email** para ver el contenido HTML
+
+### **Testing del Sistema de Email**
+
+```bash
+# Probar checkout con notificaciones por email
+curl -X POST http://localhost:8080/api/checkout/simple \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": 1,
+    "customerName": "Alejandro Test",
+    "customerEmail": "alejandro09pf3@gmail.com",
+    "quantity": 1,
+    "totalPrice": 100.0
+  }'
+```
+
+**Resultado esperado:**
+- Respuesta JSON con detalles de la orden
+- Email de confirmación enviado a `alejandro09pf3@gmail.com`
+- Email de notificación enviado a `admin@tallerdatosas.com`
+- Ambos emails visibles en Mailtrap inbox
+
+### **Frontend - Flujo de Compra con Email**
+
+1. **Abrir frontend MPA**: http://localhost:3001/src/pages/products.html
+2. **Hacer clic en cualquier producto** para comprar
+3. **Llenar formulario de compra**:
+   - Nombre del cliente
+   - Email del cliente
+   - Cantidad
+4. **Hacer clic en "Procesar Compra"**
+5. **Ver confirmación** en pantalla
+6. **Verificar emails** en Mailtrap
 
 ---
 
@@ -247,6 +352,25 @@ POST /api/checkout
     "fechaProcesamiento": "2024-10-05T20:00:00",
     "items": [...],
     "message": "Compra procesada exitosamente"
+  }
+
+POST /api/checkout/simple
+- Descripción: Procesa una compra simple desde el frontend con notificaciones por email
+- Content-Type: application/json
+- Body: {
+    "productId": 1,
+    "customerName": "Alejandro Test",
+    "customerEmail": "alejandro09pf3@gmail.com",
+    "quantity": 1,
+    "totalPrice": 100.0
+  }
+- Respuesta: {
+    "orderId": "ORDER-1760827367518",
+    "status": "SUCCESS",
+    "txId": "TX-1760827367518",
+    "total": 100.0,
+    "fechaProcesamiento": "2025-10-18T17:42:47.5182037",
+    "items": [{"sku": "PROD-1", "cantidad": 1, "precioUnitario": 100.0, "subtotal": 100.0}]
   }
 ```
 
@@ -754,6 +878,7 @@ curl -X POST http://localhost:8080/api/products \
 | 3 | ✅ | Aplicación Web SPA con carrito y checkout |
 | 4 | ✅ | Arquitectura de dos niveles (MPA + REST/SOAP/gRPC) |
 | 5 | ✅ | Sistema de notificaciones Kafka con 3 proveedores |
+| 6 | ✅ | Sistema de notificaciones por email con Mailtrap |
 
 ### **Sistema Kafka - Estado Actual:**
 - ✅ **Kafka Cluster** funcionando (puerto 9092)
@@ -762,9 +887,19 @@ curl -X POST http://localhost:8080/api/products \
 - ✅ **3 Kafka Consumers** en proveedores funcionando
 - ✅ **Enrutamiento inteligente** por SKU funcionando
 - ✅ **MDB (Message-Driven Beans)** implementados
-- ⚠️ **Consumer de emails** para clientes (pendiente implementar)
+- ✅ **Consumer de emails** para clientes (✅ **IMPLEMENTADO**)
+- ✅ **Sistema de notificaciones por email** con Mailtrap
 
 ## 🆕 Mejoras Recientes
+
+### **Sistema de Notificaciones por Email (Nuevo)**
+- ✅ **Mailtrap** configurado para testing de emails
+- ✅ **EmailService** implementado con Thymeleaf templates
+- ✅ **EmailNotificationMDB** consumer de Kafka para emails
+- ✅ **Templates HTML** para confirmación de compra y notificaciones admin
+- ✅ **Integración completa** con sistema de checkout
+- ✅ **Configuración SMTP** con credenciales seguras
+- ✅ **Envío asíncrono** de notificaciones por email
 
 ### **Sistema Kafka (Nuevo)**
 - ✅ **Apache Kafka** integrado con Zookeeper
@@ -792,6 +927,9 @@ curl -X POST http://localhost:8080/api/products \
 - ✅ **CORS configurado** para todos los endpoints SOAP
 - ✅ **Kafka Producer** implementado para notificaciones
 - ✅ **JTA con Atomikos** funcionando correctamente
+- ✅ **Endpoint /api/checkout/simple** para frontend con notificaciones por email
+- ✅ **EmailService** con templates Thymeleaf para emails HTML
+- ✅ **Configuración Mailtrap** para testing de emails
 
 ### **Integración**
 - ✅ **Flujo completo de compra** desde catálogo hasta confirmación
@@ -800,6 +938,8 @@ curl -X POST http://localhost:8080/api/products \
 - ✅ **Procesamiento de compra** funcional con respuesta completa
 - ✅ **Notificaciones Kafka** funcionando con enrutamiento correcto
 - ✅ **Sistema distribuido** con 5 bases de datos + Kafka
+- ✅ **Notificaciones por email** automáticas para clientes y administradores
+- ✅ **Frontend MPA** con flujo de compra funcional y productos clickeables
 
 ## 🔍 Estructura de la Base de Datos
 
@@ -831,14 +971,15 @@ Ahora la capa de datos está distribuida en **cinco dominios independientes** m�
 ### **Sistema Kafka (Puerto 9092)**
 - **Topics**: `ventas-proveedor-a`, `ventas-proveedor-b`, `ventas-proveedor-c`, `notificaciones-clientes`
 - **Producers**: Backend principal
-- **Consumers**: 3 microservicios de proveedores
+- **Consumers**: 3 microservicios de proveedores + EmailService para notificaciones por email
 
 ## 📝 Notas Técnicas
 
-- **Backend**: Puerto 8080 (REST + SOAP + Kafka Producer)
+- **Backend**: Puerto 8080 (REST + SOAP + Kafka Producer + Email Service)
 - **Frontend SPA**: Puerto 3000 (o disponible)
 - **Frontend MPA**: Puerto 3001 (servidor Python) o archivos HTML estáticos
 - **Kafka**: Puerto 9092 (mensajería asíncrona)
+- **Mailtrap**: sandbox.smtp.mailtrap.io:2525 (testing de emails)
 - **Bases de datos**:
    - Inventario: 3306 (schema: inventario)
    - Facturación: 3307 (schema: facturacion)
@@ -858,3 +999,4 @@ Ahora la capa de datos está distribuida en **cinco dominios independientes** m�
    - usuarios: 5 usuarios con datos completos
    - productos: Catálogo completo de productos
 - **Arquitectura**: Microservicios con Kafka - MPA consume servicios REST/SOAP del backend; datos preparados para escalado horizontal
+- **Email**: Sistema de notificaciones por email con Mailtrap para testing
