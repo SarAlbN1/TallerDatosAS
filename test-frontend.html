@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend</title>
+</head>
+<body>
+    <h1>Test Frontend</h1>
+    <div id="productsGrid"></div>
+    <div id="loading">Cargando...</div>
+    <div id="error" style="display: none;"></div>
+
+    <script>
+        // Simular la configuración
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        // Simular Utils.fetchData
+        async function fetchData(url, options = {}) {
+            try {
+                console.log('Fetching:', url);
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Response data:', data);
+                return data;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                throw error;
+            }
+        }
+
+        // Simular loadProducts
+        async function loadProducts() {
+            try {
+                console.log('Loading products...');
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                const products = await fetchData(`${API_BASE_URL}/products`);
+                console.log('Products loaded:', products);
+                
+                renderProducts(products);
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Simular renderProducts
+        function renderProducts(products) {
+            console.log('Rendering products:', products);
+            const grid = document.getElementById('productsGrid');
+            if (!grid) {
+                console.error('Grid element not found!');
+                return;
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p>No hay productos</p>';
+                return;
+            }
+
+            grid.innerHTML = products.map(product => `
+                <div style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+                    <h3>${product.nombre || product.name}</h3>
+                    <p>ID: ${product.id}</p>
+                    <p>SKU: ${product.sku}</p>
+                    <p>Stock: ${product.stock}</p>
+                    <p>Organización: ${product.organizacion || 'N/A'}</p>
+                    <p>Categoría: ${product.categoria || 'N/A'}</p>
+                </div>
+            `).join('');
+            
+            console.log('Products rendered successfully');
+        }
+
+        // Cargar productos cuando se carga la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting to load products...');
+            loadProducts();
+        });
+    </script>
+</body>
+</html>

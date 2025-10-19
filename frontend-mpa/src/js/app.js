@@ -90,7 +90,7 @@ class RestService {
     }
 
     static async getOrganizations() {
-        return await Utils.fetchData(`${API_BASE_URL}/organizations`);
+        return await Utils.fetchData(`${API_BASE_URL}/product-organizations`);
     }
 
     static async createOrganization(organization) {
@@ -100,8 +100,15 @@ class RestService {
         });
     }
 
+    static async processCheckout(orderData) {
+        return await Utils.fetchData(`${API_BASE_URL}/checkout/simple`, {
+            method: 'POST',
+            body: JSON.stringify(orderData)
+        });
+    }
+
     static async getCategories() {
-        return await Utils.fetchData(`${API_BASE_URL}/categories`);
+        return await Utils.fetchData(`${API_BASE_URL}/product-categories`);
     }
 
     static async createCategory(category) {

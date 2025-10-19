@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Debug Original</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-database"></i>
+                <span>TallerDatosAS</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1><i class="fas fa-box"></i> Productos - Debug Original</h1>
+                <p>Versión con debug del archivo original</p>
+            </header>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando productos...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script src="../../config.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        // Debug: Verificar si las dependencias están disponibles
+        console.log('=== DEBUG INICIADO ===');
+        console.log('CONFIG disponible:', typeof CONFIG !== 'undefined' ? CONFIG : 'NO DISPONIBLE');
+        console.log('Utils disponible:', typeof Utils !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('RestService disponible:', typeof RestService !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Search disponible:', typeof Search !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Modal disponible:', typeof Modal !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Notification disponible:', typeof Notification !== 'undefined' ? 'SÍ' : 'NO');
+
+        // Variables globales
+        let allProducts = [];
+        let allOrganizations = [];
+        let allCategories = [];
+
+        // Inicialización de la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('=== DOMContentLoaded ejecutado ===');
+            try {
+                loadProducts();
+                loadOrganizations();
+                loadCategories();
+                initSearch();
+                initCreateProductForm();
+                console.log('=== Todas las funciones de inicialización ejecutadas ===');
+            } catch (error) {
+                console.error('Error en inicialización:', error);
+            }
+        });
+
+        // Cargar productos desde la API REST
+        async function loadProducts() {
+            try {
+                console.log('=== loadProducts iniciado ===');
+                Utils.showLoading('loading');
+                Utils.hideError('error');
+                
+                console.log('Llamando a RestService.getProducts()...');
+                allProducts = await RestService.getProducts();
+                console.log('Productos recibidos:', allProducts);
+                
+                console.log('Llamando a renderProducts...');
+                renderProducts(allProducts);
+                console.log('=== loadProducts completado ===');
+                
+            } catch (error) {
+                console.error('Error loading products:', error);
+                Utils.showError('error', `Error al cargar productos: ${error.message}`);
+                Notification.show('Error al cargar productos', 'error');
+            } finally {
+                Utils.hideLoading('loading');
+            }
+        }
+
+        // Cargar organizaciones para el formulario
+        async function loadOrganizations() {
+            try {
+                console.log('=== loadOrganizations iniciado ===');
+                allOrganizations = await RestService.getOrganizations();
+                console.log('Organizaciones recibidas:', allOrganizations);
+                populateOrganizationSelect();
+                console.log('=== loadOrganizations completado ===');
+            } catch (error) {
+                console.error('Error loading organizations:', error);
+            }
+        }
+
+        // Cargar categorías para el formulario
+        async function loadCategories() {
+            try {
+                console.log('=== loadCategories iniciado ===');
+                allCategories = await RestService.getCategories();
+                console.log('Categorías recibidas:', allCategories);
+                populateCategorySelect();
+                console.log('=== loadCategories completado ===');
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Renderizar productos en la grilla
+        function renderProducts(products) {
+            console.log('=== renderProducts iniciado ===');
+            console.log('Productos a renderizar:', products);
+            
+            const grid = document.getElementById('productsGrid');
+            console.log('Elemento productsGrid encontrado:', grid ? 'SÍ' : 'NO');
+            
+            if (!grid) {
+                console.error('Elemento productsGrid no encontrado');
+                return;
+            }
+
+            if (products.length === 0) {
+                console.log('No hay productos para mostrar');
+                grid.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No hay productos</h3>
+                        <p>No se encontraron productos que coincidan con los criterios de búsqueda.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            console.log('Renderizando', products.length, 'productos...');
+            grid.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <div class="card-header">
+                        <h3 class="card-title">${escapeHtml(product.nombre || product.name)}</h3>
+                        <span class="card-id">#${product.id}</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-meta">
+                            <p><strong>Organización:</strong> ${escapeHtml(product.organizacion || product.organization?.name || 'N/A')}</p>
+                            <p><strong>Categoría:</strong> ${escapeHtml(product.categoria || product.category?.name || 'N/A')}</p>
+                            ${product.descripcion ? `<p><strong>Descripción:</strong> ${escapeHtml(product.descripcion)}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            console.log('=== renderProducts completado ===');
+        }
+
+        // Poblar select de organizaciones (no se usa en el formulario actual)
+        function populateOrganizationSelect() {
+            console.log('=== populateOrganizationSelect ejecutado ===');
+            // No se necesita para el formulario actual
+            return;
+        }
+
+        // Poblar select de categorías
+        function populateCategorySelect() {
+            console.log('=== populateCategorySelect iniciado ===');
+            const select = document.getElementById('productCategory');
+            console.log('Elemento productCategory encontrado:', select ? 'SÍ' : 'NO');
+            
+            if (!select) {
+                console.log('Elemento productCategory no encontrado, saltando...');
+                return;
+            }
+
+            select.innerHTML = '<option value="">Seleccionar categoría...</option>' +
+                allCategories.map(cat => 
+                    `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`
+                ).join('');
+            console.log('=== populateCategorySelect completado ===');
+        }
+
+        // Inicializar búsqueda
+        function initSearch() {
+            console.log('=== initSearch iniciado ===');
+            Search.init('searchInput', (searchTerm) => {
+                const filteredProducts = Search.filterItems(allProducts, searchTerm, [
+                    'nombre',
+                    'name',
+                    'organizacion',
+                    'organization.name',
+                    'categoria',
+                    'category.name',
+                    'descripcion',
+                    'category.description'
+                ]);
+                renderProducts(filteredProducts);
+            });
+            console.log('=== initSearch completado ===');
+        }
+
+        // Inicializar formulario de creación de productos
+        function initCreateProductForm() {
+            console.log('=== initCreateProductForm iniciado ===');
+            const form = document.getElementById('createProductForm');
+            console.log('Elemento createProductForm encontrado:', form ? 'SÍ' : 'NO');
+            
+            if (!form) {
+                console.log('Elemento createProductForm no encontrado, saltando...');
+                return;
+            }
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                
+                const formData = new FormData(form);
+                const product = {
+                    nombre: formData.get('name'),
+                    sku: formData.get('sku') || `SKU-${Date.now()}`,
+                    stock: parseInt(formData.get('stock')) || 0,
+                    categoriaId: parseInt(formData.get('categoryId'))
+                };
+
+                try {
+                    await RestService.createProduct(product);
+                    Notification.show('Producto creado exitosamente', 'success');
+                    closeCreateProductModal();
+                    loadProducts(); // Recargar la lista
+                } catch (error) {
+                    console.error('Error creating product:', error);
+                    Notification.show('Error al crear producto', 'error');
+                }
+            });
+            console.log('=== initCreateProductForm completado ===');
+        }
+
+        // Mostrar modal de creación de producto
+        function showCreateProductModal() {
+            Modal.show('createProductModal');
+        }
+
+        // Cerrar modal de creación de producto
+        function closeCreateProductModal() {
+            Modal.hide('createProductModal');
+        }
+
+        // Función para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Función para formatear fecha
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            return new Date(dateString).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>

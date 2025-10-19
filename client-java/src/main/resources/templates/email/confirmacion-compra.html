@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Compra</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+        }
+        .success-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .order-info h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .info-value {
+            color: #212529;
+        }
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .products-table th,
+        .products-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .products-table th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .products-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .total-section {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✅</div>
+            <h1>¡Compra Confirmada!</h1>
+            <p>Gracias por tu compra en TallerDatosAS</p>
+        </div>
+
+        <div class="order-info">
+            <h3>📋 Detalles de la Orden</h3>
+            <div class="info-row">
+                <span class="info-label">Número de Factura:</span>
+                <span class="info-value" th:text="${event.facturaId}">FAC-001</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Cliente:</span>
+                <span class="info-value" th:text="${event.clienteId}">Cliente-001</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value" th:text="${event.clienteEmail}">cliente@email.com</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Fecha de Compra:</span>
+                <span class="info-value" th:text="${fechaFormateada}">18/10/2025 11:19</span>
+            </div>
+        </div>
+
+        <h3>🛒 Productos Comprados</h3>
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="producto : ${event.productos}">
+                    <td th:text="${producto.sku}">LAPTOP001</td>
+                    <td th:text="${producto.nombre}">Laptop Dell Inspiron 15</td>
+                    <td th:text="${producto.cantidad}">1</td>
+                    <td th:text="${#numbers.formatDecimal(producto.precio, 1, 2)}">$1,000.00</td>
+                    <td th:text="${#numbers.formatDecimal(producto.precio * producto.cantidad, 1, 2)}">$1,000.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <h3>💰 Total de la Compra</h3>
+            <div class="total-amount" th:text="${totalFormateado}">$1,000.00</div>
+        </div>
+
+        <div class="footer">
+            <p><strong>TallerDatosAS</strong></p>
+            <p>Sistema de Compras Distribuidas</p>
+            <p>Este es un email automático, por favor no responder.</p>
+            <p>Si tienes alguna consulta, contacta a nuestro equipo de soporte.</p>
+        </div>
+    </div>
+</body>
+</html>
+

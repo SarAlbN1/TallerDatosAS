@@ -1,10 +1,64 @@
 services:
-  db:
-    image: mysql:8.0 
-    container_name: mysql-db
+  db_inventario:
+    image: mysql:8.4
+    container_name: mysql-inventario
     restart: unless-stopped
     ports:
-      - "3306:3306"  # Map host port 3306 to container port 3306
+      - "3306:3306" # Inventario DB
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: inventario
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - inventario_data:/var/lib/mysql
+      - ./inventario_init.sql:/docker-entrypoint-initdb.d/01-inventario_init.sql:ro
+
+  db_facturacion:
+    image: mysql:8.4
+    container_name: mysql-facturacion
+    restart: unless-stopped
+    ports:
+      - "3307:3306" # Facturación DB (host 3307)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: facturacion
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - facturacion_data:/var/lib/mysql
+      - ./facturacion_init.sql:/docker-entrypoint-initdb.d/01-facturacion_init.sql:ro
+
+  db_pagos:
+    image: mysql:8.4
+    container_name: mysql-pagos
+    restart: unless-stopped
+    ports:
+      - "3308:3306" # Pagos DB (host 3308)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: pagos
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - pagos_data:/var/lib/mysql
+      - ./pagos_init.sql:/docker-entrypoint-initdb.d/01-pagos_init.sql:ro
+
+  db_productos:
+    image: mysql:8.4
+    container_name: mysql-productos
+    restart: unless-stopped
+    ports:
+      - "3309:3306"  # Productos DB (host 3309)
     environment:
       MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
       MYSQL_DATABASE: productos
@@ -14,8 +68,173 @@ services:
       MYSQL_COLLATION: utf8mb4_unicode_ci
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
-      - db_data:/var/lib/mysql # Persist database data
-      - ./complete_init.sql:/docker-entrypoint-initdb.d/01-complete_init.sql # Create tables and load test data
+      - productos_data:/var/lib/mysql # Persist database data
+      - ./productos_init.sql:/docker-entrypoint-initdb.d/productos_init.sql:ro
+
+  db_usuarios:
+    image: mysql:8.4
+    container_name: mysql-usuarios
+    restart: unless-stopped
+    ports:
+      - "3310:3306"  # Usuarios DB (host 3310)
+    environment:
+      MYSQL_ROOT_PASSWORD: tBCpeSeSB7k5#&b%
+      MYSQL_DATABASE: usuarios
+      MYSQL_USER: equipo
+      MYSQL_PASSWORD: 123456
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - usuarios_data:/var/lib/mysql
+      - ./usuarios_init.sql:/docker-entrypoint-initdb.d/01-usuarios_init.sql:ro
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - kafka-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - kafka-network
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: |
+      bash -c "
+        echo '🚀 Initializing Kafka Topics...'
+        
+        # Wait for Kafka to be ready
+        echo '⏳ Waiting for Kafka to be ready...'
+        sleep 30
+        
+        # Create topics for providers (point-to-point)
+        echo '📦 Creating provider topics...'
+        kafka-topics --create --topic ventas-proveedor-a --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --if-not-exists
+        kafka-topics --create --topic ventas-proveedor-b --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --if-not-exists
+        kafka-topics --create --topic ventas-proveedor-c --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --if-not-exists
+        
+        # Create topic for customer notifications (fan-out)
+        echo '📧 Creating customer notification topic...'
+        kafka-topics --create --topic notificaciones-clientes --bootstrap-server kafka:9092 --partitions 3 --replication-factor 1 --if-not-exists
+        
+        # List all topics to verify
+        echo '✅ Verifying topics creation...'
+        kafka-topics --list --bootstrap-server kafka:9092
+        
+        echo '🎉 Kafka topics initialization completed!'
+        echo ''
+        echo '📋 Created topics:'
+        echo '  - ventas-proveedor-a (point-to-point for Provider A)'
+        echo '  - ventas-proveedor-b (point-to-point for Provider B)'
+        echo '  - ventas-proveedor-c (point-to-point for Provider C)'
+        echo '  - notificaciones-clientes (fan-out for customer notifications)'
+      "
+    restart: "no"
+    networks:
+      - kafka-network
+
+  # Proveedores
+  proveedor-a:
+    build:
+      context: ../proveedor-a-app
+      dockerfile: Dockerfile
+    container_name: proveedor-a
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: proveedor-a-group
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-network
+
+  proveedor-b:
+    build:
+      context: ../proveedor-b-app
+      dockerfile: Dockerfile
+    container_name: proveedor-b
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: proveedor-b-group
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-network
+
+  proveedor-c:
+    build:
+      context: ../proveedor-c-app
+      dockerfile: Dockerfile
+    container_name: proveedor-c
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_CONSUMER_GROUP_ID: proveedor-c-group
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - kafka-network
 
 volumes:
-  db_data:
+  inventario_data:
+  facturacion_data:
+  pagos_data:
+  productos_data:
+  usuarios_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+
+networks:
+  kafka-network:
+    driver: bridge

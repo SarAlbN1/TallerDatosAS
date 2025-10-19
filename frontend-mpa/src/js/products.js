@@ -6,21 +6,33 @@ let allCategories = [];
 
 // Inicialización de la página
 document.addEventListener('DOMContentLoaded', () => {
-    loadProducts();
-    loadOrganizations();
-    loadCategories();
-    initSearch();
-    initCreateProductForm();
+    console.log('=== Inicializando página de productos ===');
+    try {
+        loadProducts();
+        loadOrganizations();
+        loadCategories();
+        initSearch();
+        initCreateProductForm();
+        console.log('=== Inicialización completada ===');
+    } catch (error) {
+        console.error('Error en inicialización:', error);
+    }
 });
 
 // Cargar productos desde la API REST
 async function loadProducts() {
     try {
+        console.log('=== loadProducts iniciado ===');
         Utils.showLoading('loading');
         Utils.hideError('error');
         
+        console.log('Llamando a RestService.getProducts()...');
         allProducts = await RestService.getProducts();
+        console.log('Productos recibidos:', allProducts);
+        
+        console.log('Llamando a renderProducts...');
         renderProducts(allProducts);
+        console.log('=== loadProducts completado ===');
         
     } catch (error) {
         console.error('Error loading products:', error);
@@ -34,8 +46,11 @@ async function loadProducts() {
 // Cargar organizaciones para el formulario
 async function loadOrganizations() {
     try {
+        console.log('=== loadOrganizations iniciado ===');
         allOrganizations = await RestService.getOrganizations();
+        console.log('Organizaciones recibidas:', allOrganizations);
         populateOrganizationSelect();
+        console.log('=== loadOrganizations completado ===');
     } catch (error) {
         console.error('Error loading organizations:', error);
     }
@@ -44,8 +59,11 @@ async function loadOrganizations() {
 // Cargar categorías para el formulario
 async function loadCategories() {
     try {
+        console.log('=== loadCategories iniciado ===');
         allCategories = await RestService.getCategories();
+        console.log('Categorías recibidas:', allCategories);
         populateCategorySelect();
+        console.log('=== loadCategories completado ===');
     } catch (error) {
         console.error('Error loading categories:', error);
     }
@@ -53,10 +71,19 @@ async function loadCategories() {
 
 // Renderizar productos en la grilla
 function renderProducts(products) {
+    console.log('=== renderProducts iniciado ===');
+    console.log('Productos a renderizar:', products);
+    
     const grid = document.getElementById('productsGrid');
-    if (!grid) return;
+    console.log('Elemento productsGrid encontrado:', grid ? 'SÍ' : 'NO');
+    
+    if (!grid) {
+        console.error('Elemento productsGrid no encontrado');
+        return;
+    }
 
     if (products.length === 0) {
+        console.log('No hay productos para mostrar');
         grid.innerHTML = `
             <div class="no-data">
                 <i class="fas fa-box-open"></i>
@@ -67,32 +94,30 @@ function renderProducts(products) {
         return;
     }
 
+    console.log('Renderizando', products.length, 'productos...');
     grid.innerHTML = products.map(product => `
         <div class="product-card">
             <div class="card-header">
-                <h3 class="card-title">${escapeHtml(product.name)}</h3>
+                <h3 class="card-title">${escapeHtml(product.nombre || product.name)}</h3>
                 <span class="card-id">#${product.id}</span>
             </div>
             <div class="card-content">
                 <div class="card-meta">
-                    <p><strong>Organización:</strong> ${escapeHtml(product.organization?.name || 'N/A')}</p>
-                    <p><strong>Categoría:</strong> ${escapeHtml(product.category?.name || 'N/A')}</p>
-                    ${product.category?.description ? `<p><strong>Descripción:</strong> ${escapeHtml(product.category.description)}</p>` : ''}
+                    <p><strong>Organización:</strong> ${escapeHtml(product.organizacion || product.organization?.name || 'N/A')}</p>
+                    <p><strong>Categoría:</strong> ${escapeHtml(product.categoria || product.category?.name || 'N/A')}</p>
+                    ${product.descripcion ? `<p><strong>Descripción:</strong> ${escapeHtml(product.descripcion)}</p>` : ''}
                 </div>
             </div>
         </div>
     `).join('');
+    
+    console.log('=== renderProducts completado ===');
 }
 
-// Poblar select de organizaciones
+// Poblar select de organizaciones (no se usa en el formulario actual)
 function populateOrganizationSelect() {
-    const select = document.getElementById('productOrganization');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Seleccionar organización...</option>' +
-        allOrganizations.map(org => 
-            `<option value="${org.id}">${escapeHtml(org.name)}</option>`
-        ).join('');
+    // No se necesita para el formulario actual
+    return;
 }
 
 // Poblar select de categorías
@@ -108,47 +133,73 @@ function populateCategorySelect() {
 
 // Inicializar búsqueda
 function initSearch() {
-    Search.init('searchInput', (searchTerm) => {
-        const filteredProducts = Search.filterItems(allProducts, searchTerm, [
-            'name',
-            'organization.name',
-            'category.name',
-            'category.description'
-        ]);
-        renderProducts(filteredProducts);
-    });
+    try {
+        console.log('=== initSearch iniciado ===');
+        const searchInput = document.getElementById('searchInput');
+        console.log('Elemento searchInput encontrado:', searchInput ? 'SÍ' : 'NO');
+        
+        if (!searchInput) {
+            console.log('Elemento searchInput no encontrado, saltando initSearch');
+            return;
+        }
+        
+        Search.init('searchInput', (searchTerm) => {
+            const filteredProducts = Search.filterItems(allProducts, searchTerm, [
+                'nombre',
+                'name',
+                'organizacion',
+                'organization.name',
+                'categoria',
+                'category.name',
+                'descripcion',
+                'category.description'
+            ]);
+            renderProducts(filteredProducts);
+        });
+        console.log('=== initSearch completado ===');
+    } catch (error) {
+        console.error('Error en initSearch:', error);
+    }
 }
 
 // Inicializar formulario de creación
 function initCreateProductForm() {
-    const form = document.getElementById('createProductForm');
-    if (!form) return;
-
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+    try {
+        console.log('=== initCreateProductForm iniciado ===');
+        const form = document.getElementById('createProductForm');
+        console.log('Elemento createProductForm encontrado:', form ? 'SÍ' : 'NO');
         
-        const formData = new FormData(form);
-        const product = {
-            name: formData.get('name'),
-            organization: {
-                id: parseInt(formData.get('organizationId'))
-            },
-            category: {
-                id: parseInt(formData.get('categoryId'))
-            }
-        };
-
-        try {
-            await RestService.createProduct(product);
-            Notification.show('Producto creado exitosamente', 'success');
-            closeCreateProductModal();
-            form.reset();
-            loadProducts(); // Recargar la lista
-        } catch (error) {
-            console.error('Error creating product:', error);
-            Notification.show('Error al crear producto', 'error');
+        if (!form) {
+            console.log('Elemento createProductForm no encontrado, saltando initCreateProductForm');
+            return;
         }
-    });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const formData = new FormData(form);
+            const product = {
+                nombre: formData.get('name'),
+                sku: formData.get('sku') || `SKU-${Date.now()}`,
+                stock: parseInt(formData.get('stock')) || 0,
+                categoriaId: parseInt(formData.get('categoryId'))
+            };
+
+            try {
+                await RestService.createProduct(product);
+                Notification.show('Producto creado exitosamente', 'success');
+                closeCreateProductModal();
+                form.reset();
+                loadProducts(); // Recargar la lista
+            } catch (error) {
+                console.error('Error creating product:', error);
+                Notification.show('Error al crear producto', 'error');
+            }
+        });
+        console.log('=== initCreateProductForm completado ===');
+    } catch (error) {
+        console.error('Error en initCreateProductForm:', error);
+    }
 }
 
 // Mostrar modal de creación

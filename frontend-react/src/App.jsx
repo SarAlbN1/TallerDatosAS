@@ -42,8 +42,18 @@ function App() {
   const [isCreating, setIsCreating] = useState(false)
   const [showCreateDropdown, setShowCreateDropdown] = useState(false)
   const [createType, setCreateType] = useState('product')
+  
+  // Cart and checkout states
+  const [cart, setCart] = useState([])
+  const [showCart, setShowCart] = useState(false)
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('TARJETA')
+  const [orderConfirmation, setOrderConfirmation] = useState(null)
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false)
+  const [randomUser, setRandomUser] = useState(null)
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState([])
 
-  const API_BASE_URL = '/api'
+  const API_BASE_URL = 'http://localhost:8080/api'
 
   useEffect(() => {
     fetchData()
@@ -91,12 +101,11 @@ function App() {
   // Filtrado y ordenamiento
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.organization?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.category?.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch = product.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
       
-      const matchesOrg = !selectedOrg || product.organization?.id.toString() === selectedOrg
-      const matchesCategory = !selectedCategory || product.category?.id.toString() === selectedCategory
+      const matchesOrg = !selectedOrg // No organization field in API
+      const matchesCategory = !selectedCategory || product.categoria === selectedCategory
       
       return matchesSearch && matchesOrg && matchesCategory
     })
@@ -107,20 +116,20 @@ function App() {
       
       switch (sortBy) {
         case 'name':
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
+          aValue = a.nombre?.toLowerCase() || ''
+          bValue = b.nombre?.toLowerCase() || ''
           break
         case 'organization':
-          aValue = a.organization?.name?.toLowerCase() || ''
-          bValue = b.organization?.name?.toLowerCase() || ''
+          aValue = '' // No organization field in API
+          bValue = ''
           break
         case 'category':
-          aValue = a.category?.name?.toLowerCase() || ''
-          bValue = b.category?.name?.toLowerCase() || ''
+          aValue = a.categoria?.toLowerCase() || ''
+          bValue = b.categoria?.toLowerCase() || ''
           break
         default:
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
+          aValue = a.nombre?.toLowerCase() || ''
+          bValue = b.nombre?.toLowerCase() || ''
       }
       
       if (sortOrder === 'asc') {
@@ -186,6 +195,223 @@ function App() {
     setSortBy('name')
     setSortOrder('asc')
   }
+
+  // Cart functions
+  const addToCart = (product) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.sku === product.sku)
+      if (existingItem) {
+        return prevCart.map(item =>
+          item.sku === product.sku
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      } else {
+        return [...prevCart, {
+          sku: product.sku,
+          nombre: product.nombre,
+          precio: 100.0, // Precio fijo como en el backend
+          quantity: 1,
+          categoria: product.categoria
+        }]
+      }
+    })
+    toast.success(`${product.nombre} agregado al carrito`)
+  }
+
+  const removeFromCart = (sku) => {
+    setCart(prevCart => prevCart.filter(item => item.sku !== sku))
+    toast.success('Producto removido del carrito')
+  }
+
+  const updateCartQuantity = (sku, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(sku)
+      return
+    }
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.sku === sku ? { ...item, quantity } : item
+      )
+    )
+  }
+
+  const getCartTotal = () => {
+    return cart.reduce((total, item) => total + (item.precio * item.quantity), 0)
+  }
+
+  const getCartItemCount = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0)
+  }
+
+  // El usuario aleatorio se obtiene automáticamente en el backend via SOAP/gRPC
+  // No necesitamos obtenerlo en el frontend
+
+  // SOAP functions
+  const getRandomUserSOAP = async () => {
+    try {
+      const soapRequest = `
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetRandomUserRequest xmlns="http://cliente.com/users">
+              <requestId>REQ-${Date.now()}</requestId>
+            </GetRandomUserRequest>
+          </soap:Body>
+        </soap:Envelope>
+      `
+
+      const response = await axios.post('http://localhost:8080/ws', soapRequest, {
+        headers: {
+          'Content-Type': 'text/xml; charset=utf-8',
+          'SOAPAction': 'GetRandomUser'
+        }
+      })
+
+      // Parse SOAP response
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(response.data, 'text/xml')
+      
+      // Buscar el elemento user (puede tener namespace ns2:)
+      const userElement = xmlDoc.getElementsByTagName('user')[0] || 
+                         xmlDoc.getElementsByTagName('ns2:user')[0]
+      
+      if (userElement) {
+        // Función helper para obtener texto de elementos con o sin namespace
+        const getTextContent = (tagName) => {
+          const element = userElement.getElementsByTagName(tagName)[0] || 
+                         userElement.getElementsByTagName(`ns2:${tagName}`)[0]
+          return element?.textContent || ''
+        }
+        
+        return {
+          id: getTextContent('id'),
+          nombre: getTextContent('nombre'),
+          email: getTextContent('email'),
+          telefono: getTextContent('telefono'),
+          direccion: getTextContent('direccion'),
+          ciudad: getTextContent('ciudad'),
+          pais: getTextContent('pais')
+        }
+      }
+      throw new Error('No se pudo obtener usuario del SOAP')
+    } catch (error) {
+      console.error('Error SOAP getRandomUser:', error)
+      throw error
+    }
+  }
+
+  const getPaymentMethodsSOAP = async () => {
+    try {
+      const soapRequest = `
+        <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+          <soap:Body>
+            <GetPaymentMethodsRequest xmlns="http://cliente.com/users">
+              <requestId>REQ-${Date.now()}</requestId>
+            </GetPaymentMethodsRequest>
+          </soap:Body>
+        </soap:Envelope>
+      `
+
+      const response = await axios.post('http://localhost:8080/ws', soapRequest, {
+        headers: {
+          'Content-Type': 'text/xml; charset=utf-8',
+          'SOAPAction': 'GetPaymentMethods'
+        }
+      })
+
+      // Parse SOAP response
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(response.data, 'text/xml')
+      
+      // Buscar elementos paymentMethod con o sin namespace
+      let methods = xmlDoc.getElementsByTagName('paymentMethod')
+      if (methods.length === 0) {
+        methods = xmlDoc.getElementsByTagName('ns2:paymentMethod')
+      }
+      const paymentMethods = Array.from(methods).map(method => method.textContent)
+
+      return paymentMethods
+    } catch (error) {
+      console.error('Error SOAP getPaymentMethods:', error)
+      // Fallback a métodos por defecto
+      return ['TARJETA', 'PAYPAL', 'TRANSFERENCIA', 'EFECTIVO']
+    }
+  }
+
+  // Load user and payment data when checkout opens
+  useEffect(() => {
+    if (showCheckout && !randomUser) {
+      loadCheckoutData()
+    }
+  }, [showCheckout])
+
+  const loadCheckoutData = async () => {
+    try {
+      // 1. Obtener usuario aleatorio via SOAP
+      console.log('🔍 Obteniendo usuario aleatorio via SOAP...')
+      const user = await getRandomUserSOAP()
+      console.log('✅ Usuario obtenido via SOAP:', user)
+      setRandomUser(user)
+
+      // 2. Obtener métodos de pago via SOAP
+      console.log('🔍 Obteniendo métodos de pago via SOAP...')
+      const methods = await getPaymentMethodsSOAP()
+      console.log('✅ Métodos de pago via SOAP:', methods)
+      setAvailablePaymentMethods(methods)
+      
+      // Set first method as default
+      if (methods.length > 0) {
+        setPaymentMethod(methods[0])
+      }
+    } catch (error) {
+      console.error('Error loading checkout data:', error)
+      toast.error('Error cargando datos de checkout')
+    }
+  }
+
+  // Checkout functions
+  const processCheckout = async () => {
+    if (cart.length === 0) {
+      toast.error('El carrito está vacío')
+      return
+    }
+
+    if (!randomUser || availablePaymentMethods.length === 0) {
+      toast.error('Cargando datos de checkout...')
+      return
+    }
+
+    setIsProcessingOrder(true)
+    try {
+      // 3. Procesar checkout via REST (que internamente usa gRPC)
+      const checkoutData = {
+        items: cart.map(item => ({
+          sku: item.sku,
+          cantidad: item.quantity
+        })),
+        metodoPago: paymentMethod,
+        clienteId: parseInt(randomUser.id) // Usar el usuario obtenido via SOAP
+      }
+
+      console.log('🔍 Procesando checkout via REST/gRPC...')
+      const response = await axios.post(`${API_BASE_URL}/checkout`, checkoutData)
+      console.log('✅ Checkout procesado:', response.data)
+      
+      setOrderConfirmation(response.data)
+      setShowCheckout(false)
+      setCart([])
+      setRandomUser(null)
+      setAvailablePaymentMethods([])
+      toast.success('¡Compra procesada exitosamente!')
+    } catch (error) {
+      console.error('Error processing checkout:', error)
+      toast.error('Error al procesar la compra: ' + (error.response?.data?.message || error.message))
+    } finally {
+      setIsProcessingOrder(false)
+    }
+  }
+
+  // El backend obtiene automáticamente el usuario aleatorio via SOAP/gRPC
 
   if (loading) {
     return (
@@ -281,6 +507,17 @@ function App() {
                 <span>{categories.length}</span>
               </div>
             </div>
+            
+            {/* Cart Button */}
+            <motion.button
+              onClick={() => setShowCart(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="cart-button"
+            >
+              <Package size={18} />
+              Carrito ({getCartItemCount()})
+            </motion.button>
             
             <div className="create-dropdown-container">
               <motion.button
@@ -525,32 +762,53 @@ function App() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     whileHover={{ scale: 1.02 }}
-                    onClick={() => setSelectedProduct(product)}
                   >
-                    <div className="product-header">
-                      <h3>{product.name}</h3>
-                      <div className="view-details">
-                        <Eye size={18} />
-                      </div>
+                  <div className="product-header">
+                    <h3>{product.nombre}</h3>
+                    <div className="product-actions">
+                      <motion.button
+                        onClick={() => setSelectedProduct(product)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="view-details-btn"
+                      >
+                        <Eye size={16} />
+                      </motion.button>
                     </div>
+                  </div>
                     <div className="product-details">
                       <div className="detail-row">
                         <div className="detail-item">
                           <Building2 size={14} />
-                          <span className="detail-text">{product.organization?.name || 'N/A'}</span>
+                          <span className="detail-text">N/A</span>
                         </div>
                         <div className="detail-item">
                           <Tag size={14} />
-                          <span className="detail-text">{product.category?.name || 'N/A'}</span>
+                          <span className="detail-text">{product.categoria || 'N/A'}</span>
                         </div>
                       </div>
-                      {product.category?.description && (
+                      {product.descripcion && (
                         <div className="detail-item description">
-                          <span>{product.category.description}</span>
+                          <span>{product.descripcion}</span>
                         </div>
                       )}
+                    <div className="product-price">
+                      <span className="price">$100.00</span>
                     </div>
-                  </motion.div>
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        addToCart(product)
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="add-to-cart-btn"
+                    >
+                      <Plus size={16} />
+                      Agregar al Carrito
+                    </motion.button>
+                  </div>
+                </motion.div>
                 ))}
             </div>
           )}
@@ -566,6 +824,304 @@ function App() {
         <p>Taller de Datos - Arquitectura de Software</p>
         <p>Backend: Spring Boot + JPA + MySQL | Frontend: React + Vite</p>
       </motion.footer>
+
+      {/* Cart Modal */}
+      <AnimatePresence>
+        {showCart && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCart(false)}
+          >
+            <motion.div
+              className="modal cart-modal"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Carrito de Compras</h2>
+                <motion.button
+                  onClick={() => setShowCart(false)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="close-button"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+              <div className="modal-body">
+                {cart.length === 0 ? (
+                  <div className="empty-cart">
+                    <Package size={48} />
+                    <p>Tu carrito está vacío</p>
+                    <motion.button
+                      onClick={() => setShowCart(false)}
+                      whileHover={{ scale: 1.05 }}
+                      className="primary-button"
+                    >
+                      Continuar Comprando
+                    </motion.button>
+                  </div>
+                ) : (
+                  <div className="cart-content">
+                    <div className="cart-items">
+                      {cart.map((item) => (
+                        <div key={item.sku} className="cart-item">
+                          <div className="item-info">
+                            <h4>{item.nombre}</h4>
+                            <p className="item-category">{item.categoria}</p>
+                            <p className="item-price">${item.precio.toFixed(2)}</p>
+                          </div>
+                          <div className="item-controls">
+                            <motion.button
+                              onClick={() => updateCartQuantity(item.sku, item.quantity - 1)}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="quantity-btn"
+                            >
+                              -
+                            </motion.button>
+                            <span className="quantity">{item.quantity}</span>
+                            <motion.button
+                              onClick={() => updateCartQuantity(item.sku, item.quantity + 1)}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="quantity-btn"
+                            >
+                              +
+                            </motion.button>
+                            <motion.button
+                              onClick={() => removeFromCart(item.sku)}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="remove-btn"
+                            >
+                              <X size={16} />
+                            </motion.button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="cart-summary">
+                      <div className="total">
+                        <h3>Total: ${getCartTotal().toFixed(2)}</h3>
+                      </div>
+                      <motion.button
+                        onClick={() => {
+                          setShowCart(false)
+                          setShowCheckout(true)
+                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="checkout-button"
+                      >
+                        Proceder al Pago
+                      </motion.button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Checkout Modal */}
+      <AnimatePresence>
+        {showCheckout && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCheckout(false)}
+          >
+            <motion.div
+              className="modal checkout-modal"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Finalizar Compra</h2>
+                <motion.button
+                  onClick={() => setShowCheckout(false)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="close-button"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+              <div className="modal-body">
+                <div className="checkout-content">
+                  <div className="order-summary">
+                    <h3>Resumen del Pedido</h3>
+                    {cart.map((item) => (
+                      <div key={item.sku} className="order-item">
+                        <span>{item.nombre} x {item.quantity}</span>
+                        <span>${(item.precio * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                    <div className="order-total">
+                      <strong>Total: ${getCartTotal().toFixed(2)}</strong>
+                    </div>
+                  </div>
+
+                  {/* Datos de Usuario y Envío */}
+                  <div className="shipping-section">
+                    <h3>Datos de Envío</h3>
+                    {!randomUser ? (
+                      <div className="loading-user">
+                        <RefreshCw size={16} className="spinning" />
+                        Obteniendo datos de usuario aleatorio via SOAP...
+                      </div>
+                    ) : (
+                      <div className="user-data">
+                        <div className="user-info">
+                          <div className="info-row">
+                            <span className="label">Nombre:</span>
+                            <span className="value">{randomUser.nombre || 'Usuario Aleatorio'}</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Email:</span>
+                            <span className="value">{randomUser.email || 'usuario@ejemplo.com'}</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Teléfono:</span>
+                            <span className="value">{randomUser.telefono || '+57 300 123 4567'}</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Dirección:</span>
+                            <span className="value">{randomUser.direccion || 'Calle 123 #45-67'}</span>
+                          </div>
+                          <div className="info-row">
+                            <span className="label">Ciudad:</span>
+                            <span className="value">{randomUser.ciudad && randomUser.pais ? `${randomUser.ciudad}, ${randomUser.pais}` : 'Bogotá, Colombia'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  
+                  <div className="payment-section">
+                    <h3>Seleccionar Método de Pago</h3>
+                    <div className="payment-methods">
+                      {availablePaymentMethods.length === 0 ? (
+                        <div className="loading-user">
+                          <RefreshCw size={16} className="spinning" />
+                          Cargando métodos de pago...
+                        </div>
+                      ) : (
+                        availablePaymentMethods.map((method) => (
+                          <label key={method} className="payment-method">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value={method}
+                              checked={paymentMethod === method}
+                              onChange={(e) => setPaymentMethod(e.target.value)}
+                            />
+                            <span>{method}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  
+                  <motion.button
+                    onClick={processCheckout}
+                    disabled={isProcessingOrder || !randomUser || availablePaymentMethods.length === 0}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="process-payment-button"
+                  >
+                    {isProcessingOrder ? (
+                      <>
+                        <RefreshCw size={16} className="spinning" />
+                        Procesando...
+                      </>
+                    ) : !randomUser || availablePaymentMethods.length === 0 ? (
+                      <>
+                        <RefreshCw size={16} className="spinning" />
+                        Cargando datos...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle size={16} />
+                        Confirmar Compra
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Order Confirmation Modal */}
+      <AnimatePresence>
+        {orderConfirmation && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOrderConfirmation(null)}
+          >
+            <motion.div
+              className="modal confirmation-modal"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>¡Compra Exitosa!</h2>
+                <motion.button
+                  onClick={() => setOrderConfirmation(null)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="close-button"
+                >
+                  <X size={24} />
+                </motion.button>
+              </div>
+              <div className="modal-body">
+                <div className="confirmation-content">
+                  <div className="success-icon">
+                    <CheckCircle size={48} />
+                  </div>
+                  <div className="order-details">
+                    <h3>Detalles de la Orden</h3>
+                    <p><strong>ID de Orden:</strong> {orderConfirmation.orderId}</p>
+                    <p><strong>Número de Factura:</strong> {orderConfirmation.numeroFactura}</p>
+                    <p><strong>Referencia de Pago:</strong> {orderConfirmation.referenciaPago}</p>
+                    <p><strong>Total:</strong> ${orderConfirmation.total}</p>
+                    <p><strong>Estado:</strong> {orderConfirmation.status}</p>
+                    <p><strong>Fecha:</strong> {new Date(orderConfirmation.fechaProcesamiento).toLocaleString()}</p>
+                  </div>
+                  <motion.button
+                    onClick={() => setOrderConfirmation(null)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="primary-button"
+                  >
+                    Continuar Comprando
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Product Details Modal */}
       <AnimatePresence>
@@ -597,26 +1153,26 @@ function App() {
               </div>
               <div className="modal-body">
                 <div className="detail-section">
-                  <h3>{selectedProduct.name}</h3>
+                  <h3>{selectedProduct.nombre}</h3>
                   <div className="detail-grid">
                     <div className="detail-item">
                       <Building2 size={20} />
                       <div className="detail-content">
                         <span className="detail-label">Organización</span>
-                        <span className="detail-value">{selectedProduct.organization?.name || 'N/A'}</span>
+                        <span className="detail-value">N/A</span>
                       </div>
                     </div>
                     <div className="detail-item">
                       <Tag size={20} />
                       <div className="detail-content">
                         <span className="detail-label">Categoría</span>
-                        <span className="detail-value">{selectedProduct.category?.name || 'N/A'}</span>
+                        <span className="detail-value">{selectedProduct.categoria || 'N/A'}</span>
                       </div>
                     </div>
-                    {selectedProduct.category?.description && (
+                    {selectedProduct.descripcion && (
                       <div className="detail-item full-width">
-                        <strong>Descripción de la categoría:</strong>
-                        <span>{selectedProduct.category.description}</span>
+                        <strong>Descripción:</strong>
+                        <span>{selectedProduct.descripcion}</span>
                       </div>
                     )}
                   </div>

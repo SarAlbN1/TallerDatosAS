@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos Test - TallerDatosAS MPA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-database"></i>
+                <span>TallerDatosAS</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <header class="page-header">
+                <h1><i class="fas fa-box"></i> Productos Test</h1>
+                <p>Prueba de carga de JavaScript</p>
+            </header>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando productos...</p>
+            </div>
+
+            <div class="error" id="error" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p id="errorMessage"></p>
+            </div>
+
+            <div class="products-grid" id="productsGrid">
+                <!-- Los productos se cargarán aquí dinámicamente -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Test simple de JavaScript
+        console.log('=== SCRIPT INICIADO ===');
+        console.log('JavaScript está funcionando');
+        
+        // Verificar si las dependencias están disponibles
+        console.log('Verificando dependencias...');
+        
+        // Test de carga de config.js
+        console.log('Cargando config.js...');
+    </script>
+    
+    <script src="../../config.js"></script>
+    
+    <script>
+        console.log('Config.js cargado, verificando CONFIG...');
+        if (typeof CONFIG !== 'undefined') {
+            console.log('CONFIG disponible:', CONFIG);
+        } else {
+            console.error('CONFIG no está disponible');
+        }
+    </script>
+    
+    <script src="../js/app.js"></script>
+    
+    <script>
+        console.log('app.js cargado, verificando clases...');
+        console.log('Utils disponible:', typeof Utils !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('RestService disponible:', typeof RestService !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Search disponible:', typeof Search !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Modal disponible:', typeof Modal !== 'undefined' ? 'SÍ' : 'NO');
+        console.log('Notification disponible:', typeof Notification !== 'undefined' ? 'SÍ' : 'NO');
+    </script>
+    
+    <script src="../js/products.js"></script>
+    
+    <script>
+        console.log('products.js cargado');
+        console.log('=== TODOS LOS SCRIPTS CARGADOS ===');
+    </script>
+</body>
+</html>
